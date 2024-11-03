@@ -278,6 +278,6 @@ class GestureModelTrainer:
         return gesture_name, confidence
     
 if __name__ == "__main__":
-    trainer = GestureModelTrainer(frames_to_skip=50)
+    trainer = GestureModelTrainer(frames_to_skip=0, image_size=(128, 128))
     model, history = trainer.train()
     trainer.save_model(model, 'gesture_model')
