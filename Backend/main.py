@@ -5,8 +5,11 @@ from .modules.exoplanets.services import find_exoplanets_by_name, find_some_exop
 from .modules.exoplanets.models import ExoplanetsByNameRequest, ExoplanetsResponse
 from .modules.input.models import InputResponse
 from .modules.input.services import process_input
+from .modules.users.models import AuthRequest, AuthResponse
+from .modules.users.services import registerUser, loginUser, init_bd
 
 app = FastAPI()
+init_bd()
 
 
 @app.post("/load_surroundings")
@@ -36,3 +39,11 @@ async def get_some_exoplanets() -> ExoplanetsResponse:
 async def get_action_by_image(file: UploadFile) -> InputResponse:
     action = await process_input(file)
     return InputResponse(action=action)
+
+@app.post("/register")
+async def register (request: AuthRequest) -> AuthResponse:
+    return registerUser(request)
+
+@app.post("/login")
+async def login (request: AuthRequest) -> AuthResponse:
+    return loginUser(request)
