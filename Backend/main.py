@@ -47,3 +47,14 @@ async def register (request: AuthRequest) -> AuthResponse:
 @app.post("/login")
 async def login (request: AuthRequest) -> AuthResponse:
     return loginUser(request)
+
+@router.post("/users/{user_id}/constellations", response_model=dict)
+async def add_constellation(user_id: int, constellation: Constellation):
+    return await createConstellation(user_id, constellation)
+
+@router.get("/users/{user_id}/constellations", response_model=list[Constellation])
+async def list_constellations(user_id: int):
+    constellations = await getConstellationsByUser(user_id)
+    if not constellations:
+        raise HTTPException(status_code=404, detail="No constellations found for this user")
+    return constellations
