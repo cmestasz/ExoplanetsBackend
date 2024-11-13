@@ -5,6 +5,7 @@ __pycache__/
 *$py.class
 christiaaaaan
 image.jpg
+users.db
 
 # C extensions
 *.so

@@ -1,20 +1,21 @@
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, UploadFile, HTTPException, APIRouter
 from .modules.stars.services import generate_around_planet_name, load_around_position
 from .modules.stars.models import SurroundingsRequest, SurroundingsResponse, NameRequest
 from .modules.exoplanets.services import find_exoplanets_by_name, find_some_exoplanets
 from .modules.exoplanets.models import ExoplanetsByNameRequest, ExoplanetsResponse
 from .modules.input.models import InputResponse
 from .modules.input.services import process_input
-from .modules.users.models import AuthRequest, AuthResponse
-from .modules.users.services import registerUser, loginUser, init_bd
+from .modules.users.models import AuthRequest, AuthResponse, Constellation
+from .modules.users.services import registerUser, loginUser, init_bd, createConstellation, getConstellationsByUser
 
 app = FastAPI()
+router = APIRouter()
 init_bd()
 
 
 @app.post("/load_surroundings")
 async def load_surroundings(request: SurroundingsRequest) -> SurroundingsResponse:
-    stars = await load_around_position(request.ra, request.dec, request.parallax)
+    stars = await load_around_position(request.ra, request.dec, request.dist)
     return SurroundingsResponse(stars=stars)
 
 
@@ -58,3 +59,5 @@ async def list_constellations(user_id: int):
     if not constellations:
         raise HTTPException(status_code=404, detail="No constellations found for this user")
     return constellations
+
+app.include_router(router, prefix="/api/v1")

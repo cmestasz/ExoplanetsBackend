@@ -11,7 +11,7 @@ class Star(BaseModel):
 class SurroundingsRequest(BaseModel):
     ra: float
     dec: float
-    parallax: float
+    dist: float
 
 
 class NameRequest(BaseModel):

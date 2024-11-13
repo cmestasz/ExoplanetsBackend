@@ -8,6 +8,31 @@ import astropy.units as u
 import numpy as np
 
 
+def celestial_to_cartesian(ra, dec, distance, center_ra, center_dec, center_distance):
+    # Convert everything to radians
+    ra_rad = np.radians(ra)
+    dec_rad = np.radians(dec)
+    center_ra_rad = np.radians(center_ra)
+    center_dec_rad = np.radians(center_dec)
+
+    # Calculate Cartesian coordinates
+    x = distance * np.cos(dec_rad) * np.cos(ra_rad)
+    y = distance * np.cos(dec_rad) * np.sin(ra_rad)
+    z = distance * np.sin(dec_rad)
+
+    # Calculate center star's Cartesian coordinates
+    center_x = center_distance * np.cos(center_dec_rad) * np.cos(center_ra_rad)
+    center_y = center_distance * np.cos(center_dec_rad) * np.sin(center_ra_rad)
+    center_z = center_distance * np.sin(center_dec_rad)
+
+    # Subtract center star's coordinates to center the system
+    x -= center_x
+    y -= center_y
+    z -= center_z
+
+    return x, y, z
+
+
 def celestial_to_cartesian_parallax(
     ra, dec, parallax, center_ra, center_dec, center_parallax
 ):
@@ -47,45 +72,45 @@ def celestial_to_cartesian_parallax(
     return x, y, z
 
 
-async def load_around_position(ra, dec, parallax) -> list[Star]:
-    print(f"RA: {ra}, DEC: {dec}, PARALLAX: {parallax}")
-    dist = 1000 / parallax
+async def load_around_position(
+    ra, dec, dist, limit=100, plusminus=80, magLimit=10, searchRadius=90
+) -> list[Star]:
+    print(f"RA: {ra}, DEC: {dec}, DIST: {dist}")
+    
+    if ra < 0 or ra > 360 or dec < -90 or dec > 90 or dist < 0:
+        print("nuh uh not doing it")
+        return []
 
-    Gaia.ROW_LIMIT = 100
+    upperBound = dist + plusminus
+    lowerBound = dist - plusminus
 
-    radius = 20 * u.pc
-    radius_rad = np.arctan2(radius.to(u.pc).value, dist)
-    radius_deg = radius_rad * u.rad.to(u.deg)
-
-
-    query = f'''
-SELECT TOP 4000
-    DESIGNATION, ra, dec, parallax,
-    DISTANCE(
-        POINT('ICRS', ra, dec),
-        POINT('ICRS', {ra}, {dec})
-    ) AS angular_distance,
-    ABS(1000/parallax - {dist}) AS radial_distance
+    query = f"""
+SELECT TOP {limit}
+    gaia_source.DESIGNATION,
+    gaia_source.ra,
+    gaia_source.dec,
+    gaia_source.distance_gspphot
 FROM gaiadr3.gaia_source
 WHERE 1=CONTAINS(
     POINT('ICRS', ra, dec),
-    CIRCLE('ICRS', {ra}, {dec}, {radius_deg})
+    CIRCLE('ICRS', {ra}, {dec}, {searchRadius})
 )
-    AND parallax > 0
-    AND parallax/parallax_error > 5
-    AND ABS(1000/parallax - {dist}) < {radius.value}
-ORDER BY radial_distance ASC
-'''
+    AND gaia_source.phot_g_mean_mag < {magLimit}
+    AND gaia_source.distance_gspphot <= {upperBound}
+    AND gaia_source.distance_gspphot >= {lowerBound}
+    AND gaia_source.parallax IS NOT NULL
+ORDER BY gaia_source.distance_gspphot ASC;
+"""
 
     job = Gaia.launch_job_async(query)
     results = job.get_results()
-    
+
     ra_list = results["ra"]
     dec_list = results["dec"]
     designation_list = results["DESIGNATION"]
-    parallax_list = results["parallax"]
-    x, y, z = celestial_to_cartesian_parallax(
-        ra_list, dec_list, parallax_list, ra, dec, parallax
+    dist_list = results["distance_gspphot"]
+    x, y, z = celestial_to_cartesian(
+        ra_list, dec_list, dist_list, ra, dec, dist
     )
     sector = []
     for i in range(len(designation_list)):
