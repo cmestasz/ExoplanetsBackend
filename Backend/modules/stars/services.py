@@ -9,26 +9,17 @@ import numpy as np
 
 
 def celestial_to_cartesian(ra, dec, distance):
-    # Convert everything to radians
     ra_rad = np.radians(ra)
     dec_rad = np.radians(dec)
 
-    # Calculate Cartesian coordinates
     x = distance * np.cos(dec_rad) * np.cos(ra_rad)
     y = distance * np.cos(dec_rad) * np.sin(ra_rad)
-    z = distance * np.sin(dec_rad)
-
-    avg_x = np.mean(x)
-    avg_y = np.mean(y)
-    avg_z = np.mean(z)
-
-    # Subtract center star's coordinates to center the system
-   
+    z = distance * np.sin(dec_rad)   
 
     return x, y, z
 
 
-async def load_around_position(
+def load_around_position(
     ra, dec, dist, srange=20, magLimit=6.5, searchRadius=360
 ) -> list[Star]:
     print(f"RA: {ra}, DEC: {dec}, DIST: {dist}")
@@ -60,7 +51,6 @@ ORDER BY gaia_source.distance_gspphot ASC;
 
     job = Gaia.launch_job_async(query)
     results = job.get_results()
-    print(f"We got {len(results)}")
 
     ra_list = results["ra"]
     dec_list = results["dec"]
@@ -76,6 +66,20 @@ ORDER BY gaia_source.distance_gspphot ASC;
     return sector
 
 
+client = pyvo.dal.TAPService("https://exoplanetarchive.ipac.caltech.edu/TAP")
+
+# most seem to have a gaia id
+async def load_around_id(id) -> list[Star]:
+    query = f"SELECT TOP 1 ra, dec, sy_dist FROM ps WHERE gaia_id = {id}"
+    table_exoplanets = client.search(query=query).to_table()
+    exoplanet_row = Row(table=table_exoplanets, index=0)
+    ra = exoplanet_row["ra"]
+    dec = exoplanet_row["dec"]
+    distance = exoplanet_row["sy_dist"]
+
+    return await load_around_position(ra, dec, distance)
+
+# and this is deprecated
 async def generate_around_planet_name(planet_name) -> list[Star]:
     client = pyvo.dal.TAPService("https://exoplanetarchive.ipac.caltech.edu/TAP")
     query = f"SELECT * FROM ps WHERE pl_name LIKE '%{planet_name}%'"
@@ -116,29 +120,3 @@ async def generate_around_planet_name(planet_name) -> list[Star]:
             Star(x=str(x[i]), y=str(y[i]), z=str(z[i]), name=designation_list[i])
         )
     return sector
-
-
-"""
-from chat:
-# Datos del objeto celeste
-ra = 280.0  # Ascensión recta (grados)
-dec = -60.0  # Declinación (grados)
-distance = 100.0  # Distancia en parsecs, podrías usar 'distance_gspphot'
-pmra = 5.0  # Movimiento propio en ascensión recta (mas/año)
-pmdec = -3.0  # Movimiento propio en declinación (mas/año)
-radial_velocity = 20.0  # Velocidad radial (km/s)
-
-# Creamos las coordenadas del objeto en el marco ICRS
-object_coord = SkyCoord(ra=ra*u.degree, dec=dec*u.degree, distance=distance*u.pc,
-                        pm_ra_cosdec=pmra*u.mas/u.yr, pm_dec=pmdec*u.mas/u.yr,
-                        radial_velocity=radial_velocity*u.km/u.s, frame='icrs')
-
-# Definir el área de búsqueda en torno a esta posición
-width = u.Quantity(0.1, u.deg)
-height = u.Quantity(0.1, u.deg)
-
-# Hacer la consulta Gaia desde la posición del objeto
-# Esto devolverá los objetos cercanos desde el punto de vista terrestre, pero en tu caso
-# luego puedes hacer transformaciones
-r = Gaia.query_object_async(coordinate=object_coord, width=width, height=height)
-"""

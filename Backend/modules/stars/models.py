@@ -14,6 +14,9 @@ class SurroundingsRequest(BaseModel):
     dist: float
 
 
+class SurroundingsIdRequest(BaseModel):
+    id: str
+
 class NameRequest(BaseModel):
     exoplanet_name: str
 

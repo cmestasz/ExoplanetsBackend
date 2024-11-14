@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, HTTPException, APIRouter
-from .modules.stars.services import generate_around_planet_name, load_around_position
-from .modules.stars.models import SurroundingsRequest, SurroundingsResponse, NameRequest
+from .modules.stars.services import generate_around_planet_name, load_around_position, load_around_id
+from .modules.stars.models import SurroundingsIdRequest, SurroundingsRequest, SurroundingsResponse, NameRequest
 from .modules.exoplanets.services import find_exoplanets_by_name, find_some_exoplanets
 from .modules.exoplanets.models import ExoplanetsByNameRequest, ExoplanetsResponse
 from .modules.input.models import InputResponse
@@ -19,9 +19,9 @@ async def load_surroundings(request: SurroundingsRequest) -> SurroundingsRespons
     return SurroundingsResponse(stars=stars)
 
 
-@app.post("/load_stars_by_exoplanet_name")
-async def load_surroundings_by_name(request: NameRequest) -> SurroundingsResponse:
-    stars = await generate_around_planet_name(request.exoplanet_name)
+@app.post("/load_surroundings_by_id")
+async def load_surroundings_by_id(request: SurroundingsIdRequest) -> SurroundingsResponse:
+    stars = await load_around_id(request.id)
     return SurroundingsResponse(stars=stars)
 
 

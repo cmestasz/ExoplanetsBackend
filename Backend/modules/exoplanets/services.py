@@ -1,8 +1,5 @@
 import astropy.table
 from .models import Exoplanet
-from astroquery.gaia import Gaia
-from astropy.coordinates import SkyCoord
-from astropy import units as u
 import pyvo as vo
 
 client = vo.dal.TAPService("https://exoplanetarchive.ipac.caltech.edu/TAP")
