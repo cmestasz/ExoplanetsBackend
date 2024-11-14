@@ -8,84 +8,40 @@ import astropy.units as u
 import numpy as np
 
 
-def celestial_to_cartesian(ra, dec, distance, center_ra, center_dec, center_distance):
+def celestial_to_cartesian(ra, dec, distance):
     # Convert everything to radians
     ra_rad = np.radians(ra)
     dec_rad = np.radians(dec)
-    center_ra_rad = np.radians(center_ra)
-    center_dec_rad = np.radians(center_dec)
 
     # Calculate Cartesian coordinates
     x = distance * np.cos(dec_rad) * np.cos(ra_rad)
     y = distance * np.cos(dec_rad) * np.sin(ra_rad)
     z = distance * np.sin(dec_rad)
 
-    # Calculate center star's Cartesian coordinates
-    center_x = center_distance * np.cos(center_dec_rad) * np.cos(center_ra_rad)
-    center_y = center_distance * np.cos(center_dec_rad) * np.sin(center_ra_rad)
-    center_z = center_distance * np.sin(center_dec_rad)
+    avg_x = np.mean(x)
+    avg_y = np.mean(y)
+    avg_z = np.mean(z)
 
     # Subtract center star's coordinates to center the system
-    x -= center_x
-    y -= center_y
-    z -= center_z
-
-    return x, y, z
-
-
-def celestial_to_cartesian_parallax(
-    ra, dec, parallax, center_ra, center_dec, center_parallax
-):
-    """
-    Convert celestial coordinates to Cartesian coordinates, centered on a specific star.
-
-    Parameters:
-    ra, dec, parallax: arrays of coordinates and parallaxes for the stars
-    center_ra, center_dec, center_parallax: coordinates and parallax of the center star
-
-    All inputs should be in degrees for ra/dec, and mas for parallax.
-    """
-    dist = 1000 / parallax
-    center_dist = 1000 / center_parallax
-
-    # Convert everything to radians
-    ra_rad = np.radians(ra)
-    dec_rad = np.radians(dec)
-    center_ra_rad = np.radians(center_ra)
-    center_dec_rad = np.radians(center_dec)
-
-    # Calculate Cartesian coordinates
-    x = dist * np.cos(dec_rad) * np.cos(ra_rad)
-    y = dist * np.cos(dec_rad) * np.sin(ra_rad)
-    z = dist * np.sin(dec_rad)
-
-    # Calculate center star's Cartesian coordinates
-    center_x = center_dist * np.cos(center_dec_rad) * np.cos(center_ra_rad)
-    center_y = center_dist * np.cos(center_dec_rad) * np.sin(center_ra_rad)
-    center_z = center_dist * np.sin(center_dec_rad)
-
-    # Subtract center star's coordinates to center the system
-    x -= center_x
-    y -= center_y
-    z -= center_z
+   
 
     return x, y, z
 
 
 async def load_around_position(
-    ra, dec, dist, limit=100, plusminus=80, magLimit=10, searchRadius=90
+    ra, dec, dist, srange=20, magLimit=6.5, searchRadius=360
 ) -> list[Star]:
     print(f"RA: {ra}, DEC: {dec}, DIST: {dist}")
-    
+
     if ra < 0 or ra > 360 or dec < -90 or dec > 90 or dist < 0:
         print("nuh uh not doing it")
         return []
 
-    upperBound = dist + plusminus
-    lowerBound = dist - plusminus
+    upperBound = dist + srange
+    lowerBound = 0
 
     query = f"""
-SELECT TOP {limit}
+SELECT
     gaia_source.DESIGNATION,
     gaia_source.ra,
     gaia_source.dec,
@@ -93,7 +49,7 @@ SELECT TOP {limit}
 FROM gaiadr3.gaia_source
 WHERE 1=CONTAINS(
     POINT('ICRS', ra, dec),
-    CIRCLE('ICRS', {ra}, {dec}, {searchRadius})
+    BOX('ICRS', {ra}, {dec}, {searchRadius}, {searchRadius})
 )
     AND gaia_source.phot_g_mean_mag < {magLimit}
     AND gaia_source.distance_gspphot <= {upperBound}
@@ -104,19 +60,19 @@ ORDER BY gaia_source.distance_gspphot ASC;
 
     job = Gaia.launch_job_async(query)
     results = job.get_results()
+    print(f"We got {len(results)}")
 
     ra_list = results["ra"]
     dec_list = results["dec"]
     designation_list = results["DESIGNATION"]
     dist_list = results["distance_gspphot"]
-    x, y, z = celestial_to_cartesian(
-        ra_list, dec_list, dist_list, ra, dec, dist
-    )
+    x, y, z = celestial_to_cartesian(ra_list, dec_list, dist_list)
     sector = []
-    for i in range(len(designation_list)):
+    for i in range(len(results)):
         sector.append(
             Star(x=str(x[i]), y=str(y[i]), z=str(z[i]), name=designation_list[i])
         )
+    
     return sector
 
 
