@@ -19,7 +19,7 @@ def celestial_to_cartesian(ra, dec, distance):
     return x, y, z
 
 
-def load_around_position(
+async def load_around_position(
     ra, dec, dist, srange=20, magLimit=6.5, searchRadius=360
 ) -> list[Star]:
     print(f"RA: {ra}, DEC: {dec}, DIST: {dist}")
@@ -70,12 +70,13 @@ client = pyvo.dal.TAPService("https://exoplanetarchive.ipac.caltech.edu/TAP")
 
 # most seem to have a gaia id
 async def load_around_id(id) -> tuple[list[Star], str, float, float, float]:
-    query = f"SELECT TOP 1 ra, dec, sy_dist FROM ps WHERE gaia_id = {id}"
+    query = f"SELECT TOP 1 pl_name, ra, dec, sy_dist FROM ps WHERE gaia_id='{id}'"
     table_exoplanets = client.search(query=query).to_table()
     exoplanet_row = Row(table=table_exoplanets, index=0)
     name = exoplanet_row["pl_name"]
     ra = exoplanet_row["ra"]
     dec = exoplanet_row["dec"]
     distance = exoplanet_row["sy_dist"]
+    stars = await load_around_position(ra, dec, distance)
 
-    return await load_around_position(ra, dec, distance), name, ra, dec, distance
+    return stars, name, ra, dec, distance
