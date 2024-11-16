@@ -8,7 +8,7 @@ class Star(BaseModel):
     name: str
 
 
-class SurroundingsRequest(BaseModel):
+class SurroundingsPosRequest(BaseModel):
     ra: float
     dec: float
     dist: float
@@ -17,9 +17,13 @@ class SurroundingsRequest(BaseModel):
 class SurroundingsIdRequest(BaseModel):
     id: str
 
-class NameRequest(BaseModel):
-    exoplanet_name: str
 
-
-class SurroundingsResponse(BaseModel):
+class SurroundingsPosResponse(BaseModel):
     stars: list[Star]
+
+class SurroundingsIdResponse(BaseModel):
+    stars: list[Star]
+    name: str
+    ra: float
+    dec: float
+    dist: float

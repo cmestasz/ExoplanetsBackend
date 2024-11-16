@@ -69,54 +69,13 @@ ORDER BY gaia_source.distance_gspphot ASC;
 client = pyvo.dal.TAPService("https://exoplanetarchive.ipac.caltech.edu/TAP")
 
 # most seem to have a gaia id
-async def load_around_id(id) -> list[Star]:
+async def load_around_id(id) -> tuple[list[Star], str, float, float, float]:
     query = f"SELECT TOP 1 ra, dec, sy_dist FROM ps WHERE gaia_id = {id}"
     table_exoplanets = client.search(query=query).to_table()
     exoplanet_row = Row(table=table_exoplanets, index=0)
+    name = exoplanet_row["pl_name"]
     ra = exoplanet_row["ra"]
     dec = exoplanet_row["dec"]
     distance = exoplanet_row["sy_dist"]
 
-    return await load_around_position(ra, dec, distance)
-
-# and this is deprecated
-async def generate_around_planet_name(planet_name) -> list[Star]:
-    client = pyvo.dal.TAPService("https://exoplanetarchive.ipac.caltech.edu/TAP")
-    query = f"SELECT * FROM ps WHERE pl_name LIKE '%{planet_name}%'"
-    table_exoplanets: Table = client.search(query=query).to_table()
-    # Take first entry
-    exoplanet_row: Row = Row(table=table_exoplanets, index=0)
-    ra = exoplanet_row["ra"]
-    dec = exoplanet_row["dec"]
-    distance = exoplanet_row["sy_dist"]
-    # doubious origin
-    parallax = (1000 / distance) * u.mas
-
-    print(f"Planet name: {exoplanet_row['pl_name']}")
-    # perhaps:
-    # pmra = 2.0  # Movimiento propio en ascensión recta (mas/año, opcional)
-    # pmdec = -1.5  # Movimiento propio en declinación (mas/año, opcional)
-    # radial_velocity = 10.0  # Velocidad radial (km/s, opcional)
-    coord: SkyCoord = SkyCoord(
-        ra=ra,
-        dec=dec,
-        distance=distance * u.pc,
-        unit=(u.degree, u.degree, u.pc),
-        frame="icrs",
-    )
-    Gaia.ROW_LIMIT = 100
-    results: Table = Gaia.query_object_async(coordinate=coord, radius=45 * u.deg)
-    ra_list = results["ra"]
-    dec_list = results["dec"]
-    designation_list = results["DESIGNATION"]
-    parallax_list = results["parallax"]
-    print(results[0]["DESIGNATION"])
-    x, y, z = celestial_to_cartesian_parallax(
-        ra_list, dec_list, parallax_list, ra, dec, parallax  # dubious origin
-    )
-    sector = []
-    for i in range(len(designation_list)):
-        sector.append(
-            Star(x=str(x[i]), y=str(y[i]), z=str(z[i]), name=designation_list[i])
-        )
-    return sector
+    return await load_around_position(ra, dec, distance), name, ra, dec, distance
