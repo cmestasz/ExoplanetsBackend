@@ -120,6 +120,51 @@ class GestureCapture:
         
         return frame, hand_data, model_ready_data
 
+    def dectect_gesture(self) -> None:
+        """
+        Process a frame to detect hand's gestures
+        
+        """
+        #processed_frame = self.preprocess_frame(frame)
+        while self.cap.isOpened():
+            ret, frame = self.cap.read()
+            if not ret:
+                print("Failed to grab frame")
+                break
+                
+            processed_frame = self.preprocess_frame(frame)
+            results = self.hands.process(processed_frame)
+            if results.multi_hand_landmarks:
+                if (len( results.multi_hand_landmarks ) == 2):
+                    # right
+                    h1 = results.multi_hand_landmarks[0]
+                    # left
+                    h2 = results.multi_hand_landmarks[1]
+                    thumb = results.multi_hand_landmarks[0]
+                    thumb_tip1 = h1.landmark[self.mp_hands.HandLandmark.THUMB_TIP]
+                    thumb_tip2 = h2.landmark[self.mp_hands.HandLandmark.THUMB_TIP]
+                    print(f"x: {thumb_tip1.x:.3f} - y: {thumb_tip1.y:.3f}", end=" ")
+                    print(f"x: {thumb_tip2.x:.3f} - y: {thumb_tip2.y:.3f}")
+                    self.mp_draw.draw_landmarks(
+                        frame,
+                        h1,
+                        self.mp_hands.HAND_CONNECTIONS
+                    )
+                    self.mp_draw.draw_landmarks(
+                        frame,
+                        h2,
+                        self.mp_hands.HAND_CONNECTIONS
+                    )
+            cv2.imshow('Gesture Capture', frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+                #hand_landmarks = results.multi_hand_landmarks
+                #self.mp_draw.draw_landmarks(
+                #    frame,
+                #    hand_landmarks,
+                #    self.mp_hands.HAND_CONNECTIONS
+                #)
+
     def predict_gesture(self, frame, landmarks):
         """
         Predict gesture using the loaded model
@@ -269,6 +314,9 @@ if __name__ == "__main__":
     elif mode == 'pred':
         gc = GestureCapture(model_path="gesture_model")
         gc.run_prediction()
+    elif mode == 'detect':
+        gc = GestureCapture()
+        gc.dectect_gesture()
     
     del gc
         
