@@ -1,14 +1,17 @@
 from pydantic import BaseModel
 
-class AuthResponse (BaseModel): 
+
+class AuthResponse(BaseModel):
     username: str
     message: str
 
-class AuthRequest (BaseModel):
+
+class AuthRequest(BaseModel):
     username: str
     password: str
 
-class Star (BaseModel) :
+
+class ConstellationStar(BaseModel):
     id: int
     name: str
     x: float
@@ -17,15 +20,43 @@ class Star (BaseModel) :
 
     connected_stars: list[int]
 
-class Constellation (BaseModel) :
-    id: int
+
+class Constellation(BaseModel):
+    ra: float
+    dec: float
+    dist: float
     name: str
-    stars: list[Star]
+    stars: list[ConstellationStar]
 
 
-class User (BaseModel) :
+class User(BaseModel):
     id: int
     username: str
     password: str
     constellations: list[Constellation]
 
+
+class AllConstellationsRequest(BaseModel):
+    user_id: int
+
+
+class ConstellationsResponse(BaseModel):
+    error: str
+    constellations: list[Constellation]
+
+
+class ActiveConstellationsRequest(BaseModel):
+    user_id: int
+    ra: float
+    dec: float
+    dist: float
+
+
+class CreateConstellationRequest(BaseModel):
+    user_id: int
+    name: str
+    stars: list[ConstellationStar]
+
+
+class CreateConstellationResponse(BaseModel):
+    error: str

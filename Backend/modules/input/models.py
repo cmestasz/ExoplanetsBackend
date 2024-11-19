@@ -11,4 +11,5 @@ class Action(Enum):
 
 
 class InputResponse(BaseModel):
+    error: str
     action: str
