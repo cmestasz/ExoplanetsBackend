@@ -4,8 +4,7 @@ import numpy as np
 import cv2
 from .processor import process_gesture
 
-async def process_input(file: UploadFile) -> tuple[str, str]:
-    error = None
+async def process_input(file: UploadFile) -> str:
 
     file_bytes = await file.read()
 
@@ -15,4 +14,4 @@ async def process_input(file: UploadFile) -> tuple[str, str]:
     cv2.imwrite("image.jpg", img)
     action = process_gesture(img)
 
-    return error, action
+    return action

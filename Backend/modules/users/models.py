@@ -41,7 +41,6 @@ class AllConstellationsRequest(BaseModel):
 
 
 class ConstellationsResponse(BaseModel):
-    error: str
     constellations: list[Constellation]
 
 
@@ -57,6 +56,3 @@ class CreateConstellationRequest(BaseModel):
     name: str
     stars: list[ConstellationStar]
 
-
-class CreateConstellationResponse(BaseModel):
-    error: str

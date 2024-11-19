@@ -19,12 +19,10 @@ class SurroundingsIdRequest(BaseModel):
 
 
 class SurroundingsPosResponse(BaseModel):
-    error: str
     stars: list[Star]
 
 
 class SurroundingsIdResponse(BaseModel):
-    error: str
     stars: list[Star]
     name: str
     ra: float

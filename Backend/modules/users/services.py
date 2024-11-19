@@ -171,10 +171,9 @@ async def loginUser(request: AuthRequest) -> User:
     )
 
 
-async def createConstellation(user_id: int, constellation: Constellation) -> str:
+async def createConstellation(user_id: int, constellation: Constellation) -> None:
     connection = get_connection()
     cursor = connection.cursor()
-    error = None
 
     try:
         # Insertar la constelación
@@ -202,16 +201,15 @@ async def createConstellation(user_id: int, constellation: Constellation) -> str
         connection.commit()
     except Exception as e:
         connection.rollback()
-        error = "dberror"
+        connection.close()
+        raise HTTPException(status_code=400, detail="dberror")
 
     connection.close()
-
-    return error
 
 
 async def getActiveConstellationsByUser(
     user_id: int, ra: float, dec: float, dist: float
-) -> tuple[str, list[Constellation]]:
+) -> list[Constellation]:
     return getConstellationsByQuery(
         "SELECT * FROM constellations WHERE user_id = ? AND ra = ? AND dec = ? AND dist = ?",
         (
@@ -223,7 +221,7 @@ async def getActiveConstellationsByUser(
     )
 
 
-async def getConstellationsByUser(user_id: int) -> tuple[str, list[Constellation]]:
+async def getConstellationsByUser(user_id: int) -> list[Constellation]:
     return getConstellationsByQuery(
         "SELECT * FROM constellations WHERE user_id = ?", (user_id,)
     )
@@ -234,7 +232,6 @@ def getConstellationsByQuery(
 ) -> tuple[str, list[Constellation]]:
     connection = get_connection()
     cursor = connection.cursor()
-    error = None
 
     try:
         # Obtener todas las constelaciones del usuario
@@ -275,8 +272,9 @@ def getConstellationsByQuery(
             )
 
     except:
-        error = "dberror"
+        connection.close()
+        raise HTTPException(status_code=500, detail="dberror")
 
     connection.close()
 
-    return error, constellations
+    return constellations
