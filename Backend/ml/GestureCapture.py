@@ -1,3 +1,4 @@
+from typing import Any, Dict
 import cv2
 import mediapipe as mp
 import numpy as np
@@ -5,6 +6,7 @@ import os
 import json
 from datetime import datetime
 import tensorflow as tf
+import statistics
 
 class GestureCapture:
     def __init__(self, model_path=None, camera_index=0, image_size=(128, 128)):
@@ -40,6 +42,13 @@ class GestureCapture:
         if model_path:
             self.load_model(model_path)
             
+    def draw_frame(self, frame, landmark):
+        self.mp_draw.draw_landmarks(
+            frame,
+            landmark,
+            self.mp_hands.HAND_CONNECTIONS
+        )
+
     def load_model(self, model_path):
         """
         Load the trained model and class names
@@ -120,41 +129,93 @@ class GestureCapture:
         
         return frame, hand_data, model_ready_data
 
-    def dectect_gesture(self) -> None:
+    def send_gesture(self, gesture:Dict) ->None:
+        json_str = json.dumps(gesture, indent=4)
+        print(json_str)
+
+    def is_click(self, hand_landmarks)-> bool:
+        flag = False
+        middle_hand_y = statistics.mean([
+            hand_landmarks[5].y,
+            hand_landmarks[9].y,
+            hand_landmarks[13].y,
+            hand_landmarks[17].y
+        ])
+        mean_finger_y = statistics.mean([
+            hand_landmarks[12].y,
+            hand_landmarks[16].y,
+            hand_landmarks[20].y,
+        ])
+        index_finger_points = [
+            hand_landmarks[8].x,
+            hand_landmarks[7].x,
+            hand_landmarks[6].x,
+        ]
+        range_index_finger_x = max(index_finger_points) - max(index_finger_points)
+        alignment = hand_landmarks[8].y < hand_landmarks[7].y < hand_landmarks[6].y
+
+        mean_thumb_x = statistics.mean([
+            hand_landmarks[4].x,
+            hand_landmarks[3].x,
+            hand_landmarks[2].x,
+        ])
+
+        flag = alignment and \
+            ( -0.07 < range_index_finger_x < 0.07 ) and \
+            middle_hand_y < mean_finger_y and \
+            hand_landmarks[4].x < hand_landmarks[3].x
+            
+
+        return flag
+
+
+    def detect_gesture(self, hand_landmarks)-> str:
+        if (self.is_click(hand_landmarks)): return "Click"
+        return "None"
+
+        
+
+    def traking_gestures(self) -> None:
         """
-        Process a frame to detect hand's gestures
+        Process each frame to detect hand's gestures
         
         """
-        #processed_frame = self.preprocess_frame(frame)
+        hands_tracker: Dict[str, Any] = {
+            "left": None,
+            "right": None
+        }
+
         while self.cap.isOpened():
             ret, frame = self.cap.read()
             if not ret:
                 print("Failed to grab frame")
                 break
-                
+            frame = cv2.flip(frame, 1)
             processed_frame = self.preprocess_frame(frame)
             results = self.hands.process(processed_frame)
+
+            left_hand = None
+            right_hand = None
+
+
             if results.multi_hand_landmarks:
-                if (len( results.multi_hand_landmarks ) == 2):
-                    # right
-                    h1 = results.multi_hand_landmarks[0]
-                    # left
-                    h2 = results.multi_hand_landmarks[1]
-                    thumb = results.multi_hand_landmarks[0]
-                    thumb_tip1 = h1.landmark[self.mp_hands.HandLandmark.THUMB_TIP]
-                    thumb_tip2 = h2.landmark[self.mp_hands.HandLandmark.THUMB_TIP]
-                    print(f"x: {thumb_tip1.x:.3f} - y: {thumb_tip1.y:.3f}", end=" ")
-                    print(f"x: {thumb_tip2.x:.3f} - y: {thumb_tip2.y:.3f}")
-                    self.mp_draw.draw_landmarks(
-                        frame,
-                        h1,
-                        self.mp_hands.HAND_CONNECTIONS
-                    )
-                    self.mp_draw.draw_landmarks(
-                        frame,
-                        h2,
-                        self.mp_hands.HAND_CONNECTIONS
-                    )
+                for hand_landmarks, hand_handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
+                    self.draw_frame(frame=frame, landmark=hand_landmarks)
+                    if (hand_handedness.classification[0].label == 'Right'):
+                        right_hand = {
+                            'landmark': hand_landmarks,
+                            'handedness': hand_handedness,
+                        }
+                    else: 
+                        left_hand = {
+                            'landmark': hand_landmarks,
+                            'handedness': hand_handedness,
+                        }
+            if (right_hand != None):
+                if  self.detect_gesture(right_hand['landmark'].landmark) == 'Click':
+                    print("============ de hecho ============")
+
+
             cv2.imshow('Gesture Capture', frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -305,18 +366,17 @@ class GestureCapture:
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    mode = input("Choose mode (cap/pred): ")
-    if mode == 'cap':
-        gc = GestureCapture()
-        gesture_name = input("Enter gesture name: ")
-        frames = int(input("Enter number of frames to capture: "))
-        gc.capture_gesture(gesture_name, frames)
-    elif mode == 'pred':
-        gc = GestureCapture(model_path="gesture_model")
-        gc.run_prediction()
-    elif mode == 'detect':
-        gc = GestureCapture()
-        gc.dectect_gesture()
+    gc = GestureCapture()
+    gc.traking_gestures()
+    #mode = input("Choose mode (cap/pred): ")
+    #if mode == 'cap':
+    #    gc = GestureCapture()
+    #    gesture_name = input("Enter gesture name: ")
+    #    frames = int(input("Enter number of frames to capture: "))
+    #    gc.capture_gesture(gesture_name, frames)
+    #elif mode == 'pred':
+    #    gc = GestureCapture(model_path="gesture_model")
+    #    gc.run_prediction()
     
     del gc
         
