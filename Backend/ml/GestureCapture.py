@@ -7,6 +7,7 @@ import json
 from datetime import datetime
 import tensorflow as tf
 import statistics
+import time
 
 class GestureCapture:
     def __init__(self, model_path=None, camera_index=0, image_size=(128, 128)):
@@ -130,6 +131,7 @@ class GestureCapture:
         return frame, hand_data, model_ready_data
 
     def send_gesture(self, gesture:Dict) ->None:
+        if (not gesture): return
         json_str = json.dumps(gesture, indent=4)
         print(json_str)
 
@@ -170,8 +172,8 @@ class GestureCapture:
 
 
     def detect_gesture(self, hand_landmarks)-> str:
-        if (self.is_click(hand_landmarks)): return "Click"
-        return "None"
+        if (self.is_click(hand_landmarks)): return "click"
+        return "none"
 
         
 
@@ -180,10 +182,17 @@ class GestureCapture:
         Process each frame to detect hand's gestures
         
         """
-        hands_tracker: Dict[str, Any] = {
-            "left": None,
-            "right": None
+
+        left_tracker: Dict[str, Any] = {
+            'label': None,
+            'desc': None,
         }
+
+        right_tracker: str = 'none'
+        counter_click: int = 0
+
+        start_time = time.time()
+
 
         while self.cap.isOpened():
             ret, frame = self.cap.read()
@@ -196,7 +205,6 @@ class GestureCapture:
 
             left_hand = None
             right_hand = None
-
 
             if results.multi_hand_landmarks:
                 for hand_landmarks, hand_handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
@@ -211,6 +219,49 @@ class GestureCapture:
                             'landmark': hand_landmarks,
                             'handedness': hand_handedness,
                         }
+                send: dict[Any, Any] = {}
+
+                if (right_hand != None):
+                    send['cursor'] = {
+                        'x': right_hand['landmark'].landmark[8].x,
+                        'y': right_hand['landmark'].landmark[8].y,
+                    }
+                    gesture = self.detect_gesture( right_hand['landmark'].landmark )
+                    if (right_tracker == 'none'):
+                        if (gesture == 'click'):
+                            counter_click += 1
+                            right_tracker = 'click'
+                    elif (right_tracker == 'click'):
+                        if (gesture == 'click'):
+                            counter_click += 1
+                            if (counter_click > 15):
+                                right_tracker = 'prepare'
+                        else: 
+                            counter_click = 0
+                            right_tracker = 'none'
+                    elif (right_tracker == 'prepare'):
+                        if (gesture == 'click'):
+                            counter_click += 1
+                            if (counter_click > 40):
+                                right_tracker = 'select'
+                                print('select')
+                                send['right_gesture'] = 'select'
+                        else: 
+                            send['right_gesture'] = 'click'
+                            print ('click')
+                            right_tracker = 'none'
+                            counter_click = 0
+                    elif(right_tracker == 'select'):
+                        if (not gesture == 'click'):
+                            print('deselect')
+                            send['right_gesture'] = 'deselect'
+                            right_tracker = 'none'
+                            counter_click = 0
+                        
+                #self.send_gesture(send)
+
+
+
             if (right_hand != None):
                 if  self.detect_gesture(right_hand['landmark'].landmark) == 'Click':
                     print("============ de hecho ============")
