@@ -1,5 +1,6 @@
 import sqlite3
 from fastapi import HTTPException
+import hashlib
 from .models import *
 
 DB_NAME = "users.db"
@@ -68,13 +69,24 @@ def get_connection():
     return sqlite3.connect(DB_NAME)
 
 
+def hash_password(password: str):
+    hasher = hashlib.sha256(password.encode())
+    return hasher.hexdigest()
+
+
+def check_password(sent: str, original: str):
+    return hash_password(sent) == original
+
+
 async def registerUser(request: User) -> AuthResponse:
     connection = get_connection()
     cursor = connection.cursor()
+
+    h_password = hash_password(request.password)
     try:
         cursor.execute(
             "INSERT INTO users (username, password) VALUES (?, ?)",
-            (request.username, request.password),
+            (request.username, h_password),
         )
         user_id = cursor.lastrowid
 
@@ -115,65 +127,29 @@ async def loginUser(request: AuthRequest) -> User:
     cursor = connection.cursor()
 
     cursor.execute(
-        "SELECT * FROM users WHERE username = ? AND password = ?",
-        (request.username, request.password),
+        "SELECT * FROM users WHERE username = ?",
+        (request.username,),
     )
     user_data = cursor.fetchone()
 
-    if user_data is None:
-        connection.close()
-        raise HTTPException(status_code=401, detail="Invalid username or password")
-
-    user_id = user_data[0]
-    cursor.execute("SELECT * FROM constellations WHERE user_id = ?", (user_id,))
-    constellations_data = cursor.fetchall()
-
-    constellations = []
-    for constellation in constellations_data:
-        constellation_id = constellation[0]
-        cursor.execute(
-            "SELECT * FROM stars WHERE constellation_id = ?", (constellation_id,)
-        )
-        stars_data = cursor.fetchall()
-
-        stars = []
-        for star in stars_data:
-            star_id = star[0]
-            cursor.execute(
-                "SELECT connected_star_id FROM star_connections WHERE star_id = ?",
-                (star_id,),
-            )
-            connections = cursor.fetchall()
-            connected_star_ids = [conn[0] for conn in connections]
-
-            stars.append(
-                ConstellationStar(
-                    ext_id=star[0],
-                    name=star[1],
-                    x=star[2],
-                    y=star[3],
-                    z=star[4],
-                    connected_stars=connected_star_ids,
-                )
-            )
-
-        constellations.append(
-            Constellation(id=constellation[0], name=constellation[1], stars=stars)
-        )
-
     connection.close()
+    if not check_password(request.password, user_data[2]):
+        raise HTTPException(status_code=401, detail="Invalid username or password")
 
     return User(
         id=user_data[0],
         username=user_data[1],
         password=user_data[2],
-        constellations=constellations,
     )
 
 
-async def createConstellation(user_id: int, constellation: Constellation, ra, dec, dist) -> None:
+async def createConstellation(user_id: int, constellation: Constellation) -> None:
     connection = get_connection()
     cursor = connection.cursor()
+
+    ra = constellation.ra
+    dec = constellation.dec
+    dist = constellation.dist
 
     try:
         # Insertar la constelación

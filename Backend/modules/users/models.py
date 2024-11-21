@@ -29,7 +29,6 @@ class User(BaseModel):
     id: int
     username: str
     password: str
-    constellations: list[Constellation]
 
 
 class AllConstellationsRequest(BaseModel):
@@ -47,11 +46,7 @@ class ActiveConstellationsRequest(BaseModel):
     dist: float
 
 
-class CreateConstellationRequest(BaseModel):
+class AddConstellationRequest(BaseModel):
     user_id: int
-    name: str
-    ra: float
-    dec: float
-    dist: float
-    stars: list[ConstellationStar]
+    constellation: Constellation
 
