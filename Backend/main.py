@@ -22,15 +22,17 @@ from .modules.users.models import (
 from .modules.users.services import (
     registerUser,
     loginUser,
-    init_bd,
     createConstellation,
     getAllConstellationsByUser,
     getActiveConstellationsByUser,
 )
+from .modules.admin.services import (
+    start_db,
+)
+
 
 app = FastAPI()
-init_bd()
-
+start_db()
 
 @app.post("/load_surroundings")
 async def load_surroundings(request: SurroundingsPosRequest) -> SurroundingsPosResponse:
@@ -82,7 +84,7 @@ async def add_constellation(request: AddConstellationRequest) -> None:
     return Response(status_code=200)
 
 
-@app.get("/list_all_constellations")
+@app.post("/list_all_constellations")
 async def list_all_constellations(
     request: AllConstellationsRequest,
 ) -> ConstellationsResponse:
@@ -90,7 +92,7 @@ async def list_all_constellations(
     return ConstellationsResponse(constellations=constellations)
 
 
-@app.get("/list_active_constellations")
+@app.post("/list_active_constellations")
 async def list_active_constellations(
     request: ActiveConstellationsRequest,
 ) -> ConstellationsResponse:
@@ -98,3 +100,8 @@ async def list_active_constellations(
         request.user_id, request.ra, request.dec, request.dist
     )
     return ConstellationsResponse(constellations=constellations)
+
+
+@app.post("/admin/init_db")
+def init_db():
+    start_db()
