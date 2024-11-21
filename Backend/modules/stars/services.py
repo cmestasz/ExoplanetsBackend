@@ -59,7 +59,7 @@ ORDER BY gaia_source.distance_gspphot ASC;
         x, y, z = celestial_to_cartesian(ra_list, dec_list, dist_list)
         for i in range(len(results)):
             stars.append(
-                Star(x=str(x[i]), y=str(y[i]), z=str(z[i]), name=designation_list[i])
+                Star(x=str(x[i]), y=str(y[i]), z=str(z[i]), id=designation_list[i])
             )
 
     except:

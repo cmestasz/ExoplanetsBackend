@@ -26,6 +26,9 @@ def init_bd():
         CREATE TABLE IF NOT EXISTS constellations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
+            ra REAL NOT NULL,
+            dec REAL NOT NULL,
+            dist REAL NOT NULL,
             user_id INTEGER,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
@@ -37,10 +40,7 @@ def init_bd():
         """
         CREATE TABLE IF NOT EXISTS stars (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            x REAL,
-            y REAL,
-            z REAL,
+            ext_id TEXT NOT NULL,
             constellation_id INTEGER,
             FOREIGN KEY (constellation_id) REFERENCES constellations(id)
         )
@@ -54,7 +54,7 @@ def init_bd():
             star_id INTEGER,
             connected_star_id INTEGER,
             FOREIGN KEY (star_id) REFERENCES stars(id),
-            FOREIGN KEY (connected_star_id) REFERENCES stars(id),
+            FOREIGN KEY (connected_star_id) REFERENCES stars(ext_id),
             PRIMARY KEY (star_id, connected_star_id)
         )
     """
@@ -148,7 +148,7 @@ async def loginUser(request: AuthRequest) -> User:
 
             stars.append(
                 ConstellationStar(
-                    id=star[0],
+                    ext_id=star[0],
                     name=star[1],
                     x=star[2],
                     y=star[3],
@@ -171,23 +171,23 @@ async def loginUser(request: AuthRequest) -> User:
     )
 
 
-async def createConstellation(user_id: int, constellation: Constellation) -> None:
+async def createConstellation(user_id: int, constellation: Constellation, ra, dec, dist) -> None:
     connection = get_connection()
     cursor = connection.cursor()
 
     try:
         # Insertar la constelación
         cursor.execute(
-            "INSERT INTO constellations (name, user_id) VALUES (?, ?)",
-            (constellation.name, user_id),
+            "INSERT INTO constellations (name, user_id, ra, dec, dist) VALUES (?, ?, ?, ?, ?)",
+            (constellation.name, user_id, ra, dec, dist),
         )
         constellation_id = cursor.lastrowid
 
         # Insertar las estrellas de la constelación
         for star in constellation.stars:
             cursor.execute(
-                "INSERT INTO stars (name, x, y, z, constellation_id) VALUES (?, ?, ?, ?, ?)",
-                (star.name, star.x, star.y, star.z, constellation_id),
+                "INSERT INTO stars (ext_id, constellation_id) VALUES (?, ?)",
+                (star.ext_id, constellation_id),
             )
             star_id = cursor.lastrowid
 
@@ -221,7 +221,7 @@ async def getActiveConstellationsByUser(
     )
 
 
-async def getConstellationsByUser(user_id: int) -> list[Constellation]:
+async def getAllConstellationsByUser(user_id: int) -> list[Constellation]:
     return getConstellationsByQuery(
         "SELECT * FROM constellations WHERE user_id = ?", (user_id,)
     )
@@ -258,17 +258,20 @@ def getConstellationsByQuery(
 
                 stars.append(
                     ConstellationStar(
-                        id=star[0],
-                        name=star[1],
-                        x=star[2],
-                        y=star[3],
-                        z=star[4],
+                        ext_id=star[1],
                         connected_stars=connected_star_ids,
                     )
                 )
 
             constellations.append(
-                Constellation(id=constellation[0], name=constellation[1], stars=stars)
+                Constellation(
+                    id=constellation[0],
+                    name=constellation[1],
+                    ra=constellation[2],
+                    dec=constellation[3],
+                    dist=constellation[4],
+                    stars=stars,
+                )
             )
 
     except:

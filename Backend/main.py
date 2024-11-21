@@ -24,7 +24,7 @@ from .modules.users.services import (
     loginUser,
     init_bd,
     createConstellation,
-    getConstellationsByUser,
+    getAllConstellationsByUser,
     getActiveConstellationsByUser,
 )
 
@@ -78,7 +78,7 @@ async def login(request: AuthRequest) -> AuthResponse:
 
 @app.post("/add_constellation")
 async def add_constellation(request: CreateConstellationRequest) -> None:
-    await createConstellation(request.user_id, request.name, request.stars)
+    await createConstellation(request.user_id, request.name, request.stars, request.ra, request.dec, request.dist)
     return Response(status_code=200)
 
 
@@ -86,7 +86,7 @@ async def add_constellation(request: CreateConstellationRequest) -> None:
 async def list_all_constellations(
     request: AllConstellationsRequest,
 ) -> ConstellationsResponse:
-    constellations = await getConstellationsByUser(request.user_id)
+    constellations = await getAllConstellationsByUser(request.user_id)
     return ConstellationsResponse(constellations=constellations)
 
 

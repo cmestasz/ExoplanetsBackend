@@ -12,19 +12,15 @@ class AuthRequest(BaseModel):
 
 
 class ConstellationStar(BaseModel):
-    id: int
-    name: str
-    x: float
-    y: float
-    z: float
-
-    connected_stars: list[int]
+    ext_id: str
+    connected_stars: list[str]
 
 
 class Constellation(BaseModel):
     ra: float
     dec: float
     dist: float
+    id: int
     name: str
     stars: list[ConstellationStar]
 
@@ -54,5 +50,8 @@ class ActiveConstellationsRequest(BaseModel):
 class CreateConstellationRequest(BaseModel):
     user_id: int
     name: str
+    ra: float
+    dec: float
+    dist: float
     stars: list[ConstellationStar]
 
