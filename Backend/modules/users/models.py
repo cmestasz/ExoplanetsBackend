@@ -46,7 +46,10 @@ class ActiveConstellationsRequest(BaseModel):
     dist: float
 
 
-class AddConstellationRequest(BaseModel):
+class CreateConstellationRequest(BaseModel):
     user_id: int
     constellation: Constellation
 
+
+class CreateConstellationResponse(BaseModel):
+    message: str

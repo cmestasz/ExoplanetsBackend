@@ -17,7 +17,8 @@ from .modules.users.models import (
     ConstellationsResponse,
     ActiveConstellationsRequest,
     ConstellationsResponse,
-    AddConstellationRequest,
+    CreateConstellationRequest,
+    CreateConstellationResponse,
 )
 from .modules.users.services import (
     registerUser,
@@ -78,10 +79,10 @@ async def login(request: AuthRequest) -> AuthResponse:
     return loginUser(request)
 
 
-@app.post("/add_constellation")
-async def add_constellation(request: AddConstellationRequest) -> None:
-    await createConstellation(request.user_id, request.constellation)
-    return Response(status_code=200)
+@app.post("/create_constellation")
+async def create_constellation(request: CreateConstellationRequest) -> CreateConstellationResponse:
+    message = await createConstellation(request.user_id, request.constellation)
+    return CreateConstellationResponse(message=message) 
 
 
 @app.post("/list_all_constellations")

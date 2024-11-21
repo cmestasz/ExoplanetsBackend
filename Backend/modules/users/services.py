@@ -84,7 +84,7 @@ async def loginUser(request: AuthRequest) -> User:
     )
 
 
-async def createConstellation(user_id: int, constellation: Constellation) -> None:
+async def createConstellation(user_id: int, constellation: Constellation) -> str:
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -122,6 +122,7 @@ async def createConstellation(user_id: int, constellation: Constellation) -> Non
         raise HTTPException(status_code=400, detail="dberror")
 
     connection.close()
+    return "ok"
 
 
 async def getActiveConstellationsByUser(
