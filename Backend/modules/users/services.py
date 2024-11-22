@@ -14,6 +14,7 @@ DATABASE_KEY = os.getenv("DATABASE_KEY")
 engine = create_engine(f"postgresql://{DATABASE_URL}", pool_size=10, max_overflow=20)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 # Crear tablas si no existen
 def init_db():
     with engine.connect() as connection:
