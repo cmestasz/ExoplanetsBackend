@@ -1,4 +1,6 @@
-from typing import Any, Dict
+import re
+from typing import Any, Dict, Tuple
+import math
 import statistics
 
 def is_click(hand_landmarks, side:str)-> bool:
@@ -77,6 +79,83 @@ def process_right_hand(send:Dict[str, Any], right_hand:Dict[str, Any], tracker:D
             tracker['label'] = 'none'
             tracker['counter_click'] = 0
 
+def get_rotation(landmark, reference:list)-> Tuple[int, int]:
+    """
+    This function calculates the angular velocity based on the position of the hand. Specifically, it computes the angular velocity by analyzing the movement of the index finger relative to a reference point.
+
+    The reference point is defined by the position of the index finger at the moment of mode switching. This position is paired with a reference distance, which is the distance between the metacarpophalangeal (MCP) joints of the index finger and the pinky.
+
+    Using this reference distance, the function applies a quadratic function to estimate the angular velocity, taking into account the changes in position over time
+    """
+    reference_distance = reference[2]
+    reference_x = reference[0] 
+    reference_y = reference[1] 
+    cursor_x = landmark[8].x
+    cursor_y = landmark[8].y
+    dx = (cursor_x - reference_x) / reference_distance
+    dy = (cursor_y - reference_y) / reference_distance
+    
+    # Angular velocity
+    dx = dx * 125 / 4
+    dy = dy * 125 / 4
+    return dx, dy
+
+def set_reference(landmark, reference:list)-> None:
+    reference[0] = landmark[8].x
+    reference[1] = landmark[8].y
+    reference[2] = math.sqrt( 
+        (landmark[5].x - landmark[17].x)**2 +
+        (landmark[5].y - landmark[17].y)**2 
+    )
+
 def process_left_hand(send:Dict[str, Any], left_hand:Dict[str, Any], tracker:Dict[str, Any])-> None:
     gesture: str =detect_left_gesture(left_hand['landmark'].landmark)
-    print(gesture)
+    if (tracker['label'] == 'rotation'):
+        set_reference(left_hand['landmark'].landmark,tracker['reference'])
+        print('rotation')
+        if (gesture=='click'):
+            tracker['counter_no_click'] = 0
+            dx, dy = get_rotation(left_hand['landmark'].landmark, tracker['reference'])
+            print(f"{dx:.1}   {dy:.1}")
+            send['rotation'] = {
+                'dx':dx,
+                'dy':dy,
+            }
+        else:
+            if (tracker['counter_no_click'] > 10):
+                tracker['last_mode'] = 'rotation'
+                tracker['label'] = 'switch'
+                tracker['counter_click'] = 0
+            else: tracker['counter_no_click'] += 1
+    elif (tracker['label'] == 'zoom'):
+        #if (gesture == 'zoom'):
+        print('zoom')
+        if (gesture == 'click'):
+            tracker['counter_click'] += 1
+            if (tracker['counter_click'] > 30):
+                tracker['last_mode'] = 'zoom'
+                tracker['label'] = 'switch'
+        else: tracker['counter_click'] = 0
+
+    elif (tracker['label'] == 'switch'):
+        if (gesture == 'click'):
+            tracker['counter_click'] += 1
+            if (tracker['counter_click'] > 15 and 10< tracker['counter_no_click'] < 30):
+                tracker['label'] = 'zoom' if (tracker['last_mode'] == 'rotation') else 'rotation'
+                tracker['counter_click'] = 0
+                tracker['counter_no_click'] = 0
+            elif (tracker['counter_click'] > 30):
+                tracker['label'] = 'rotation'
+            else:
+                tracker['counter_no_click'] = 0
+        else: 
+            if (tracker['counter_no_click'] < 15):
+                tracker['counter_no_click'] += 1
+            else:
+                tracker['counter_click'] = 0
+    else:
+        if (gesture == 'click'):
+            tracker['counter_click'] += 1
+            if (tracker['counter_click'] > 10):
+                tracker['label'] = 'rotation'
+
