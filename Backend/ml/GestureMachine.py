@@ -114,17 +114,17 @@ def process_right_hand(send:Dict[str, Any], right_hand:Dict[str, Any], tracker:D
         if (gesture == 'click'):
             tracker['counter_click'] += 1
             if (tracker['counter_click'] > 30):
-                print('select')
+                #print('select')
                 tracker['label'] = 'select'
                 send['right_gesture'] = 'select'
         else: 
             send['right_gesture'] = 'click'
-            print ('click')
+            #print ('click')
             tracker['label'] = 'none'
             tracker['counter_click'] = 0
     elif(tracker['label'] == 'select'):
         if (not gesture == 'click'):
-            print('deselect')
+            #print('deselect')
             send['right_gesture'] = 'deselect'
             tracker['label'] = 'none'
             tracker['counter_click'] = 0
@@ -133,11 +133,11 @@ def process_right_hand(send:Dict[str, Any], right_hand:Dict[str, Any], tracker:D
 def process_left_hand(send:Dict[str, Any], left_hand:Dict[str, Any], tracker:Dict[str, Any])-> None:
     gesture: str =detect_left_gesture(left_hand['landmark'].landmark)
     if (tracker['label'] == 'rotation'):
-        print('rotation')
+        #print('rotation')
         if (gesture=='click'):
             tracker['counter_no_click'] = 0
             dx, dy = get_rotation(left_hand['landmark'].landmark, tracker['reference'])
-            print(f"{dx}\n{dy}")
+            #print(f"{dx}\n{dy}")
             send['rotation'] = {
                 'dx':dx,
                 'dy':dy,
@@ -149,17 +149,13 @@ def process_left_hand(send:Dict[str, Any], left_hand:Dict[str, Any], tracker:Dic
                 tracker['counter_click'] = 16
             else: tracker['counter_no_click'] += 1
     elif (tracker['label'] == 'zoom'):
-        #if (gesture == 'zoom'):
-        #if (gesture == 'zoom'):
-            #percentage = get_percentage()
         if (gesture == 'click' and tracker['counter_no_click'] > 0):
             tracker['counter_click'] += 1
             if (tracker['counter_click'] > 30):
                 tracker['last_mode'] = 'zoom'
                 tracker['label'] = 'switch'
         else: 
-            z = get_zoom(left_hand['landmark'].landmark)
-            print(f'zoom: {z}')
+            send['zoom'] = get_zoom(left_hand['landmark'].landmark)
             tracker['counter_click'] = 0
             tracker['counter_no_click'] = 1
 
