@@ -1,174 +1,127 @@
-import sqlite3
 from fastapi import HTTPException
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import sessionmaker
 import hashlib
 from .models import *
 
-DB_NAME = "users.db"
+DATABASE_URL = "postgresql://pgplnzamgqqzcoezrkxf.supabase.co"
+DATABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBncGxuemFtZ3FxemNvZXpya3hmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE2MDMwMzUsImV4cCI6MjA0NzE3OTAzNX0.yxHX1VBmT-XfVgmsxFmIvWIwx1NcitP4VZkH1bsg9FQ"
 
+# Configuración del motor de PostgreSQL
+engine = create_engine(f"postgresql://{DATABASE_URL}", pool_size=10, max_overflow=20)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-def get_connection():
-    return sqlite3.connect(DB_NAME)
+# Crear tablas si no existen
+def init_db():
+    with engine.connect() as connection:
+        connection.execute(
+            text("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(100) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS constellations (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                user_id INTEGER REFERENCES users(id),
+                ra FLOAT NOT NULL,
+                dec FLOAT NOT NULL,
+                dist FLOAT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS stars (
+                id SERIAL PRIMARY KEY,
+                ext_id VARCHAR(100) NOT NULL,
+                constellation_id INTEGER REFERENCES constellations(id)
+            );
+            CREATE TABLE IF NOT EXISTS star_connections (
+                id SERIAL PRIMARY KEY,
+                star_id INTEGER REFERENCES stars(id),
+                connected_star_id INTEGER
+            );
+            """
+            )
+        )
 
-
+# Funciones auxiliares
 def hash_password(password: str):
-    hasher = hashlib.sha256(password.encode())
-    return hasher.hexdigest()
-
+    return hashlib.sha256(password.encode()).hexdigest()
 
 def check_password(sent: str, original: str):
     return hash_password(sent) == original
 
-
+# Operaciones principales
 async def registerUser(request: User) -> str:
-    connection = get_connection()
-    cursor = connection.cursor()
-
+    session = SessionLocal()
     h_password = hash_password(request.password)
     try:
-        cursor.execute(
-            "INSERT INTO users (username, password) VALUES (?, ?)",
-            (request.username, h_password),
+        session.execute(
+            text("INSERT INTO users (username, password) VALUES (:username, :password)"),
+            {"username": request.username, "password": h_password},
         )
-        user_id = cursor.lastrowid
-
-        connection.commit()
-    except sqlite3.IntegrityError:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
         raise HTTPException(status_code=400, detail="User already exists")
     finally:
-        connection.close()
-
-    return user_id
-
+        session.close()
+    return "User registered successfully"
 
 async def loginUser(request: AuthRequest) -> str:
-    connection = get_connection()
-    cursor = connection.cursor()
+    session = SessionLocal()
+    user = session.execute(
+        text("SELECT * FROM users WHERE username = :username"),
+        {"username": request.username},
+    ).fetchone()
+    session.close()
 
-    cursor.execute(
-        "SELECT * FROM users WHERE username = ?",
-        (request.username,),
-    )
-    user_data = cursor.fetchone()
+    if not user or not check_password(request.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    connection.close()
-    if not check_password(request.password, user_data[2]):
-        raise HTTPException(status_code=401, detail="wrong")
-
-    return user_data[0]
-
+    return user["id"]
 
 async def createConstellation(user_id: int, constellation: Constellation) -> str:
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    ra = constellation.ra
-    dec = constellation.dec
-    dist = constellation.dist
-
+    session = SessionLocal()
     try:
-        # Insertar la constelación
-        cursor.execute(
-            "INSERT INTO constellations (name, user_id, ra, dec, dist) VALUES (?, ?, ?, ?, ?)",
-            (constellation.name, user_id, ra, dec, dist),
+        result = session.execute(
+            text(
+                "INSERT INTO constellations (name, user_id, ra, dec, dist) "
+                "VALUES (:name, :user_id, :ra, :dec, :dist) RETURNING id"
+            ),
+            {
+                "name": constellation.name,
+                "user_id": user_id,
+                "ra": constellation.ra,
+                "dec": constellation.dec,
+                "dist": constellation.dist,
+            },
         )
-        constellation_id = cursor.lastrowid
+        constellation_id = result.fetchone()["id"]
 
-        # Insertar las estrellas de la constelación
         for star in constellation.stars:
-            cursor.execute(
-                "INSERT INTO stars (ext_id, constellation_id) VALUES (?, ?)",
-                (star.ext_id, constellation_id),
+            star_result = session.execute(
+                text(
+                    "INSERT INTO stars (ext_id, constellation_id) "
+                    "VALUES (:ext_id, :constellation_id) RETURNING id"
+                ),
+                {"ext_id": star.ext_id, "constellation_id": constellation_id},
             )
-            star_id = cursor.lastrowid
+            star_id = star_result.fetchone()["id"]
 
-            # Insertar las conexiones de la estrella
             for connected_star_id in star.connected_stars:
-                cursor.execute(
-                    "INSERT INTO star_connections (star_id, connected_star_id) VALUES (?, ?)",
-                    (star_id, connected_star_id),
+                session.execute(
+                    text(
+                        "INSERT INTO star_connections (star_id, connected_star_id) "
+                        "VALUES (:star_id, :connected_star_id)"
+                    ),
+                    {"star_id": star_id, "connected_star_id": connected_star_id},
                 )
 
-        connection.commit()
-    except Exception as e:
-        connection.rollback()
-        connection.close()
-        raise HTTPException(status_code=400, detail="dberror")
-
-    connection.close()
-    return "ok"
-
-
-async def getActiveConstellationsByUser(
-    user_id: int, ra: float, dec: float, dist: float
-) -> list[Constellation]:
-    return getConstellationsByQuery(
-        "SELECT * FROM constellations WHERE user_id = ? AND ra = ? AND dec = ? AND dist = ?",
-        (
-            user_id,
-            ra,
-            dec,
-            dist,
-        ),
-    )
-
-
-async def getAllConstellationsByUser(user_id: int) -> list[Constellation]:
-    return getConstellationsByQuery(
-        "SELECT * FROM constellations WHERE user_id = ?", (user_id,)
-    )
-
-
-def getConstellationsByQuery(
-    query: str, args: tuple
-) -> tuple[str, list[Constellation]]:
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    try:
-        # Obtener todas las constelaciones del usuario
-        cursor.execute(query, args)
-        constellations_data = cursor.fetchall()
-
-        constellations = []
-        for constellation in constellations_data:
-            constellation_id = constellation[0]
-            cursor.execute(
-                "SELECT * FROM stars WHERE constellation_id = ?", (constellation_id,)
-            )
-            stars_data = cursor.fetchall()
-
-            stars = []
-            for star in stars_data:
-                star_id = star[0]
-                cursor.execute(
-                    "SELECT connected_star_id FROM star_connections WHERE star_id = ?",
-                    (star_id,),
-                )
-                connections = cursor.fetchall()
-                connected_star_ids = [conn[0] for conn in connections]
-
-                stars.append(
-                    ConstellationStar(
-                        ext_id=star[1],
-                        connected_stars=connected_star_ids,
-                    )
-                )
-
-            constellations.append(
-                Constellation(
-                    id=constellation[0],
-                    name=constellation[1],
-                    ra=constellation[2],
-                    dec=constellation[3],
-                    dist=constellation[4],
-                    stars=stars,
-                )
-            )
-
-    except:
-        connection.close()
-        raise HTTPException(status_code=500, detail="dberror")
-
-    connection.close()
-
-    return constellations
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise HTTPException(status_code=400, detail="Database error")
+    finally:
+        session.close()
+    return "Constellation created successfully"
