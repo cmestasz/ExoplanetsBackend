@@ -26,14 +26,11 @@ from .modules.users.services import (
     createConstellation,
     getAllConstellationsByUser,
     getActiveConstellationsByUser,
-)
-from .modules.admin.services import (
-    start_db,
+    init_db,
 )
 
 
 app = FastAPI()
-start_db()
 
 @app.post("/load_surroundings")
 async def load_surroundings(request: SurroundingsPosRequest) -> SurroundingsPosResponse:
@@ -105,6 +102,6 @@ async def list_active_constellations(
     return ConstellationsResponse(constellations=constellations)
 
 
-@app.post("/admin/init_db")
-def init_db():
-    start_db()
+@app.post("/admin/start_db")
+def start_db():
+    init_db()
