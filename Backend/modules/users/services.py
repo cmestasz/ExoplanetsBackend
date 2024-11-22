@@ -19,7 +19,7 @@ def check_password(sent: str, original: str):
     return hash_password(sent) == original
 
 
-async def registerUser(request: User) -> AuthResponse:
+async def registerUser(request: User) -> str:
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -31,39 +31,16 @@ async def registerUser(request: User) -> AuthResponse:
         )
         user_id = cursor.lastrowid
 
-        for constellation in request.constellations:
-            cursor.execute(
-                "INSERT INTO constellations (name, user_id) VALUES (?, ?)",
-                (constellation.name, user_id),
-            )
-            constellation_id = cursor.lastrowid
-
-            for star in constellation.stars:
-                cursor.execute(
-                    "INSERT INTO stars (name, x, y, z, constellation_id) VALUES (?, ?, ?, ?, ?)",
-                    (star.name, star.x, star.y, star.z, constellation_id),
-                )
-                star_id = cursor.lastrowid
-
-                # Insertar conexiones de la estrella
-                for connected_star_id in star.connected_stars:
-                    cursor.execute(
-                        "INSERT INTO star_connections (star_id, connected_star_id) VALUES (?, ?)",
-                        (star_id, connected_star_id),
-                    )
-
         connection.commit()
     except sqlite3.IntegrityError:
         raise HTTPException(status_code=400, detail="User already exists")
     finally:
         connection.close()
 
-    return AuthResponse(
-        username=request.username, message="User registered successfully"
-    )
+    return user_id
 
 
-async def loginUser(request: AuthRequest) -> User:
+async def loginUser(request: AuthRequest) -> str:
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -75,13 +52,9 @@ async def loginUser(request: AuthRequest) -> User:
 
     connection.close()
     if not check_password(request.password, user_data[2]):
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+        raise HTTPException(status_code=401, detail="wrong")
 
-    return User(
-        id=user_data[0],
-        username=user_data[1],
-        password=user_data[2],
-    )
+    return user_data[0]
 
 
 async def createConstellation(user_id: int, constellation: Constellation) -> str:

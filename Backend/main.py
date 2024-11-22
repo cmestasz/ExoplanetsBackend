@@ -71,12 +71,14 @@ async def get_action_by_image(file: UploadFile) -> InputResponse:
 
 @app.post("/register")
 async def register(request: AuthRequest) -> AuthResponse:
-    return registerUser(request)
+    user_id = await registerUser(request)
+    return AuthResponse(user_id=user_id)
 
 
 @app.post("/login")
 async def login(request: AuthRequest) -> AuthResponse:
-    return loginUser(request)
+    user_id = await loginUser(request)
+    return AuthResponse(user_id=user_id)
 
 
 @app.post("/create_constellation")

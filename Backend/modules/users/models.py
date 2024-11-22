@@ -2,8 +2,7 @@ from pydantic import BaseModel
 
 
 class AuthResponse(BaseModel):
-    username: str
-    message: str
+    user_id: int
 
 
 class AuthRequest(BaseModel):
