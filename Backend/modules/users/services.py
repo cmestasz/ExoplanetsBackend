@@ -3,7 +3,12 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 import hashlib
+from dotenv import load_dotenv
+import os
 from .models import *
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_KEY = os.getenv("DATABASE_KEY")
 
 DATABASE_URL = "postgresql://pgplnzamgqqzcoezrkxf.supabase.co"
 DATABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBncGxuemFtZ3FxemNvZXpya3hmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE2MDMwMzUsImV4cCI6MjA0NzE3OTAzNX0.yxHX1VBmT-XfVgmsxFmIvWIwx1NcitP4VZkH1bsg9FQ"
