@@ -35,6 +35,57 @@ def is_click(hand_landmarks, side:str)-> bool:
 
     return flag
 
+def get_rotation(landmark, reference:list)-> Tuple[int, int]:
+    """
+    This function calculates the angular velocity based on the position of the hand. Specifically, it computes the angular velocity by analyzing the movement of the index finger relative to a reference point.
+
+    The reference point is defined by the position of the index finger at the moment of mode switching. This position is paired with a reference distance, which is the distance between the metacarpophalangeal (MCP) joints of the index finger and the pinky.
+
+    Using this reference distance, the function applies a quadratic function to estimate the angular velocity, taking into account the changes in position over time
+    """
+    reference_distance = reference[2]
+    reference_x = reference[0] 
+    reference_y = reference[1] 
+    cursor_x = landmark[8].x
+    cursor_y = landmark[8].y
+    dx = (cursor_x - reference_x) / reference_distance
+    dy = (cursor_y - reference_y) / reference_distance
+    
+    # Angular velocity
+    dx = dx**2 * 125 / 4
+    dy = dy**2 * 125 / 4
+    if (cursor_x < reference_x): dx *= -1
+    if (cursor_y > reference_y): dy *= -1
+    return math.floor(dx), math.floor(dy)
+
+def get_zoom(landmark) -> float:
+    if ( ( (landmark[8].x-landmark[4].x)**2 + (landmark[8].y - landmark[4].y)**2 ) < 0.004):
+        return 0
+    reference = landmark[5].x - landmark[17].x
+    mean_fingers_y = statistics.mean([
+        landmark[12].y,
+        landmark[8].y,
+        landmark[16].y,
+        landmark[20].y,
+    ])
+    mean_hand_y = statistics.mean([
+        landmark[5].y,
+        landmark[9].y,
+        landmark[13].y,
+        landmark[17].y,
+    ])
+    distance = mean_hand_y - mean_fingers_y
+    return distance / reference * 100
+
+def set_reference(landmark, reference:list)-> None:
+    reference[0] = landmark[8].x
+    reference[1] = landmark[8].y
+    reference[2] = math.sqrt( 
+        (landmark[5].x - landmark[17].x)**2 +
+        (landmark[5].y - landmark[17].y)**2 
+    )
+    print(f"reference distance: {reference[2]}")
+
 
 def detect_right_gesture(hand_landmarks)-> str:
     if (is_click(hand_landmarks,side="right")): return "click"
@@ -78,37 +129,6 @@ def process_right_hand(send:Dict[str, Any], right_hand:Dict[str, Any], tracker:D
             tracker['label'] = 'none'
             tracker['counter_click'] = 0
 
-def get_rotation(landmark, reference:list)-> Tuple[int, int]:
-    """
-    This function calculates the angular velocity based on the position of the hand. Specifically, it computes the angular velocity by analyzing the movement of the index finger relative to a reference point.
-
-    The reference point is defined by the position of the index finger at the moment of mode switching. This position is paired with a reference distance, which is the distance between the metacarpophalangeal (MCP) joints of the index finger and the pinky.
-
-    Using this reference distance, the function applies a quadratic function to estimate the angular velocity, taking into account the changes in position over time
-    """
-    reference_distance = reference[2]
-    reference_x = reference[0] 
-    reference_y = reference[1] 
-    cursor_x = landmark[8].x
-    cursor_y = landmark[8].y
-    dx = (cursor_x - reference_x) / reference_distance
-    dy = (cursor_y - reference_y) / reference_distance
-    
-    # Angular velocity
-    dx = dx**2 * 125 / 4
-    dy = dy**2 * 125 / 4
-    if (cursor_x < reference_x): dx *= -1
-    if (cursor_y > reference_y): dy *= -1
-    return math.floor(dx), math.floor(dy)
-
-def set_reference(landmark, reference:list)-> None:
-    reference[0] = landmark[8].x
-    reference[1] = landmark[8].y
-    reference[2] = math.sqrt( 
-        (landmark[5].x - landmark[17].x)**2 +
-        (landmark[5].y - landmark[17].y)**2 
-    )
-    print(f"reference distance: {reference[2]}")
 
 def process_left_hand(send:Dict[str, Any], left_hand:Dict[str, Any], tracker:Dict[str, Any])-> None:
     gesture: str =detect_left_gesture(left_hand['landmark'].landmark)
@@ -130,13 +150,16 @@ def process_left_hand(send:Dict[str, Any], left_hand:Dict[str, Any], tracker:Dic
             else: tracker['counter_no_click'] += 1
     elif (tracker['label'] == 'zoom'):
         #if (gesture == 'zoom'):
-        print('zoom')
+        #if (gesture == 'zoom'):
+            #percentage = get_percentage()
         if (gesture == 'click' and tracker['counter_no_click'] > 0):
             tracker['counter_click'] += 1
             if (tracker['counter_click'] > 30):
                 tracker['last_mode'] = 'zoom'
                 tracker['label'] = 'switch'
         else: 
+            z = get_zoom(left_hand['landmark'].landmark)
+            print(f'zoom: {z}')
             tracker['counter_click'] = 0
             tracker['counter_no_click'] = 1
 
