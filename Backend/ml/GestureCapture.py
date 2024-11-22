@@ -184,7 +184,7 @@ class GestureCapture:
                         }
                 send: dict[Any, Any] = {}
 
-                if (right_hand != None):
+                if (right_hand):
                     send['cursor'] = {
                         'x': right_hand['landmark'].landmark[8].x,
                         'y': right_hand['landmark'].landmark[8].y,
@@ -193,6 +193,10 @@ class GestureCapture:
                     GestureMachine.process_right_hand(send=send,
                                                       right_hand=right_hand,
                                                       tracker=right_tracker)
+                if (left_hand != None):
+                    GestureMachine.process_left_hand(send=send,
+                                                     left_hand=left_hand,
+                                                     tracker=left_tracker)
 
 
 

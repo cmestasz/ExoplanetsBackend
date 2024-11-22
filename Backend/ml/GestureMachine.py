@@ -1,7 +1,7 @@
 from typing import Any, Dict
 import statistics
 
-def is_click(hand_landmarks)-> bool:
+def is_click(hand_landmarks, side:str)-> bool:
     flag = False
     middle_hand_y = statistics.mean([
         hand_landmarks[5].y,
@@ -25,18 +25,26 @@ def is_click(hand_landmarks)-> bool:
 
     flag = alignment and \
         ( -0.07 < range_index_finger_x < 0.07 ) and \
-        middle_hand_y < mean_finger_y and \
-        hand_landmarks[4].x < hand_landmarks[3].x
+        middle_hand_y < mean_finger_y
+    if (side == 'left'):
+        flag = flag and hand_landmarks[4].x > hand_landmarks[3].x
+    elif (side == 'right'):
+        flag = flag and hand_landmarks[4].x < hand_landmarks[3].x
         
 
     return flag
 
-def detect_gesture(hand_landmarks)-> str:
-    if (is_click(hand_landmarks)): return "click"
+
+def detect_right_gesture(hand_landmarks)-> str:
+    if (is_click(hand_landmarks,side="right")): return "click"
     return "none"
 
-def process_right_hand(send, right_hand, tracker:dict[str, Any])-> None:
-    gesture: str = detect_gesture( right_hand['landmark'].landmark )
+def detect_left_gesture(hand_landmarks)->str:
+    if (is_click(hand_landmarks,side='left')): return "click"
+    return "none"
+
+def process_right_hand(send:Dict[str, Any], right_hand:Dict[str, Any], tracker:Dict[str, Any])-> None:
+    gesture: str = detect_right_gesture( right_hand['landmark'].landmark )
     #print(gesture)
     if (tracker['label'] == 'none'):
         if (gesture == 'click'):
@@ -68,3 +76,7 @@ def process_right_hand(send, right_hand, tracker:dict[str, Any])-> None:
             send['right_gesture'] = 'deselect'
             tracker['label'] = 'none'
             tracker['counter_click'] = 0
+
+def process_left_hand(send:Dict[str, Any], left_hand:Dict[str, Any], tracker:Dict[str, Any])-> None:
+    gesture: str =detect_left_gesture(left_hand['landmark'].landmark)
+    print(gesture)
