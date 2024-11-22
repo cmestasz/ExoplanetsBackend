@@ -136,47 +136,7 @@ class GestureCapture:
         json_str = json.dumps(gesture, indent=4)
         print(json_str)
 
-    def is_click(self, hand_landmarks)-> bool:
-        flag = False
-        middle_hand_y = statistics.mean([
-            hand_landmarks[5].y,
-            hand_landmarks[9].y,
-            hand_landmarks[13].y,
-            hand_landmarks[17].y
-        ])
-        mean_finger_y = statistics.mean([
-            hand_landmarks[12].y,
-            hand_landmarks[16].y,
-            hand_landmarks[20].y,
-        ])
-        index_finger_points = [
-            hand_landmarks[8].x,
-            hand_landmarks[7].x,
-            hand_landmarks[6].x,
-        ]
-        range_index_finger_x = max(index_finger_points) - max(index_finger_points)
-        alignment = hand_landmarks[8].y < hand_landmarks[7].y < hand_landmarks[6].y
 
-        mean_thumb_x = statistics.mean([
-            hand_landmarks[4].x,
-            hand_landmarks[3].x,
-            hand_landmarks[2].x,
-        ])
-
-        flag = alignment and \
-            ( -0.07 < range_index_finger_x < 0.07 ) and \
-            middle_hand_y < mean_finger_y and \
-            hand_landmarks[4].x < hand_landmarks[3].x
-            
-
-        return flag
-
-
-    def detect_gesture(self, hand_landmarks)-> str:
-        if (self.is_click(hand_landmarks)): return "click"
-        return "none"
-
-        
 
     def traking_gestures(self) -> None:
         """
@@ -185,8 +145,9 @@ class GestureCapture:
         """
 
         left_tracker: Dict[str, Any] = {
-            'label': None,
-            'desc': None,
+            'label': 'none',
+            'counter_click': 0,
+            'counter_no_click': 0,
         }
 
         right_tracker: Dict[str, Any] = {
@@ -194,7 +155,6 @@ class GestureCapture:
             "counter_click": 0,
         }
 
-        start_time = time.time()
 
 
         while self.cap.isOpened():
@@ -207,7 +167,7 @@ class GestureCapture:
             results = self.hands.process(processed_frame)
 
             left_hand = None
-            right_hand = None
+            right_hand: Dict[str, Any] = {}
 
             if results.multi_hand_landmarks:
                 for hand_landmarks, hand_handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
