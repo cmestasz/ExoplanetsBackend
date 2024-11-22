@@ -69,7 +69,7 @@ ORDER BY gaia_source.distance_gspphot ASC;
     sector = []
     for i in range(len(designation_list)):
         sector.append(
-            Star(x=str(x[i]), y=str(y[i]), z=str(z[i]), name=designation_list[i])
+            Star(x=str(x[i]), y=str(y[i]), z=str(z[i]), id=designation_list[i])
         )
 
     plot_stars_in_3d(x, y, z)

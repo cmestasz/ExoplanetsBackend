@@ -5,6 +5,7 @@ import cv2
 from .processor import process_gesture
 
 async def process_input(file: UploadFile) -> str:
+
     file_bytes = await file.read()
 
     np_array = np.frombuffer(file_bytes, np.uint8)

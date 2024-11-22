@@ -5,7 +5,7 @@ class Star(BaseModel):
     x: str
     y: str
     z: str
-    name: str
+    id: str
 
 
 class SurroundingsPosRequest(BaseModel):
@@ -20,6 +20,7 @@ class SurroundingsIdRequest(BaseModel):
 
 class SurroundingsPosResponse(BaseModel):
     stars: list[Star]
+
 
 class SurroundingsIdResponse(BaseModel):
     stars: list[Star]
