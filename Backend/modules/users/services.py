@@ -1,10 +1,15 @@
 import sqlite3
 from fastapi import HTTPException
 import hashlib
+from dotenv import load_dotenv
+import os
 from .models import *
+
 
 DB_NAME = "users.db"
 
+DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_KEY = os.getenv("DATABASE_KEY")
 
 def get_connection():
     return sqlite3.connect(DB_NAME)
