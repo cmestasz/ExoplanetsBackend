@@ -1,4 +1,3 @@
-import re
 from typing import Any, Dict, Tuple
 import math
 import statistics
@@ -96,9 +95,11 @@ def get_rotation(landmark, reference:list)-> Tuple[int, int]:
     dy = (cursor_y - reference_y) / reference_distance
     
     # Angular velocity
-    dx = dx * 125 / 4
-    dy = dy * 125 / 4
-    return dx, dy
+    dx = dx**2 * 125 / 4
+    dy = dy**2 * 125 / 4
+    if (cursor_x < reference_x): dx *= -1
+    if (cursor_y > reference_y): dy *= -1
+    return math.floor(dx), math.floor(dy)
 
 def set_reference(landmark, reference:list)-> None:
     reference[0] = landmark[8].x
@@ -107,16 +108,16 @@ def set_reference(landmark, reference:list)-> None:
         (landmark[5].x - landmark[17].x)**2 +
         (landmark[5].y - landmark[17].y)**2 
     )
+    print(f"reference distance: {reference[2]}")
 
 def process_left_hand(send:Dict[str, Any], left_hand:Dict[str, Any], tracker:Dict[str, Any])-> None:
     gesture: str =detect_left_gesture(left_hand['landmark'].landmark)
     if (tracker['label'] == 'rotation'):
-        set_reference(left_hand['landmark'].landmark,tracker['reference'])
         print('rotation')
         if (gesture=='click'):
             tracker['counter_no_click'] = 0
             dx, dy = get_rotation(left_hand['landmark'].landmark, tracker['reference'])
-            print(f"{dx:.1}   {dy:.1}")
+            print(f"{dx}\n{dy}")
             send['rotation'] = {
                 'dx':dx,
                 'dy':dy,
@@ -141,7 +142,10 @@ def process_left_hand(send:Dict[str, Any], left_hand:Dict[str, Any], tracker:Dic
         if (gesture == 'click'):
             tracker['counter_click'] += 1
             if (tracker['counter_click'] > 15 and 10< tracker['counter_no_click'] < 30):
-                tracker['label'] = 'zoom' if (tracker['last_mode'] == 'rotation') else 'rotation'
+                if (tracker['last_mode'] == 'rotation'): tracker['label'] = 'zoom'
+                else:
+                    tracker['label'] = 'rotation'
+                    set_reference(left_hand['landmark'].landmark,tracker['reference'])
                 tracker['counter_click'] = 0
                 tracker['counter_no_click'] = 0
             elif (tracker['counter_click'] > 30):
@@ -158,4 +162,5 @@ def process_left_hand(send:Dict[str, Any], left_hand:Dict[str, Any], tracker:Dic
             tracker['counter_click'] += 1
             if (tracker['counter_click'] > 10):
                 tracker['label'] = 'rotation'
+                set_reference(left_hand['landmark'].landmark,tracker['reference'])
 
