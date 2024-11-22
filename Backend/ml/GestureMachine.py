@@ -126,17 +126,19 @@ def process_left_hand(send:Dict[str, Any], left_hand:Dict[str, Any], tracker:Dic
             if (tracker['counter_no_click'] > 10):
                 tracker['last_mode'] = 'rotation'
                 tracker['label'] = 'switch'
-                tracker['counter_click'] = 0
+                tracker['counter_click'] = 16
             else: tracker['counter_no_click'] += 1
     elif (tracker['label'] == 'zoom'):
         #if (gesture == 'zoom'):
         print('zoom')
-        if (gesture == 'click'):
+        if (gesture == 'click' and tracker['counter_no_click'] > 0):
             tracker['counter_click'] += 1
             if (tracker['counter_click'] > 30):
                 tracker['last_mode'] = 'zoom'
                 tracker['label'] = 'switch'
-        else: tracker['counter_click'] = 0
+        else: 
+            tracker['counter_click'] = 0
+            tracker['counter_no_click'] = 1
 
     elif (tracker['label'] == 'switch'):
         if (gesture == 'click'):
