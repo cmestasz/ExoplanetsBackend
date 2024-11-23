@@ -3,6 +3,22 @@ import math
 import statistics
 
 def is_click(hand_landmarks, side:str)-> bool:
+    """
+    Decides if the current hand's position looks like a 'L'
+
+    Checks if the index finger is straight, the thumb is to the side and the rest of finger supported on the palm
+
+    Parameters:
+        hand_landmarks: A list containing the current position of the fingers' landmarks.
+        side: A string with the values of 'left' or 'right'
+
+    Returns:
+        A bool indicating if the hand is in that position
+        
+    Example:
+        >>> is_click(landmark, 'left')
+        True
+    """
     flag = False
     middle_hand_y = statistics.mean([
         hand_landmarks[5].y,
@@ -37,11 +53,26 @@ def is_click(hand_landmarks, side:str)-> bool:
 
 def get_rotation(landmark, reference:list)-> Tuple[int, int]:
     """
-    This function calculates the angular velocity based on the position of the hand. Specifically, it computes the angular velocity by analyzing the movement of the index finger relative to a reference point.
+    Calculates the angular velocity of the index finger relative to a reference point.
 
-    The reference point is defined by the position of the index finger at the moment of mode switching. This position is paired with a reference distance, which is the distance between the metacarpophalangeal (MCP) joints of the index finger and the pinky.
+    The reference point is defined by the position of the index finger at the moment of mode switching. 
+    This position is paired with a reference distance, which is the distance between the metacarpophalangeal (MCP) joints 
+    of the index finger and the pinky.
 
-    Using this reference distance, the function applies a quadratic function to estimate the angular velocity, taking into account the changes in position over time
+    The function estimates the angular velocity by analyzing the movement of the index finger, using the reference distance 
+    and a quadratic function to account for changes in the finger's position over time.
+
+    Parameters:
+        landmark: A list containing the current position of the fingers' landmarks.
+        reference (list): A list containing the reference distance and the position of the index finger at the moment of mode switching. 
+                          The reference distance is calculated from the MCP joints of the index finger and pinky.
+
+    Returns:
+        Tuple[int, int]: A tuple containing the estimated angular velocity in two components (x, y).
+        
+    Example:
+        >>> get_rotation(current_landmark, reference_data)
+        (10, 15)
     """
     reference_distance = reference[2]
     reference_x = reference[0] 
@@ -59,6 +90,21 @@ def get_rotation(landmark, reference:list)-> Tuple[int, int]:
     return math.floor(dx), math.floor(dy)
 
 def get_zoom(landmark) -> float:
+    """
+    Calculates the percentage of zoom 
+
+    It uses the mean of the fingertips and metacarpophalangeal parth of the hand
+
+    Parameters:
+        landmark: A list containing the current position of the fingers' landmarks.
+
+    Returns:
+        float: The percentage of zoom
+        
+    Example:
+        >>> get_zoom(landmark)
+        95.2322%
+    """
     if ( ( (landmark[8].x-landmark[4].x)**2 + (landmark[8].y - landmark[4].y)**2 ) < 0.004):
         return 0
     reference = landmark[5].x - landmark[17].x
@@ -78,6 +124,19 @@ def get_zoom(landmark) -> float:
     return distance / reference * 100
 
 def set_reference(landmark, reference:list)-> None:
+    """
+    This function calculates a distance of reference to calculate the angular velocity
+
+    Parameters:
+        landmarks: A list containing the current position of the fingers' landmarks.
+        reference: A list which will save the points of reference
+
+    Returns:
+        None, just save the values in the list of reference
+
+    Example:
+        >>> set_reference(landmark, reference)
+    """
     reference[0] = landmark[8].x
     reference[1] = landmark[8].y
     reference[2] = math.sqrt( 
@@ -88,14 +147,57 @@ def set_reference(landmark, reference:list)-> None:
 
 
 def detect_right_gesture(hand_landmarks)-> str:
+    """
+    This function detects the right hand gestures, actually process just the click gesture
+
+    Parameters:
+        hand_landmarks: A list containing the current position of the fingers' landmarks.
+
+    Returns:
+        A string with the current hands' gesture
+
+    Example:
+        >>> detect_right_gesture(hand_landmarks)
+        'click'
+    """
     if (is_click(hand_landmarks,side="right")): return "click"
     return "none"
 
 def detect_left_gesture(hand_landmarks)->str:
+    """
+    This function detects the left hand gestures, actually process just the click gesture
+
+    Parameters:
+        hand_landmarks: A list containing the current position of the fingers' landmarks.
+
+    Returns:
+        A string with the current hands' gesture
+
+    Example:
+        >>> detect_left_gesture(hand_landmarks)
+        'click'
+    """
     if (is_click(hand_landmarks,side='left')): return "click"
     return "none"
 
 def process_right_hand(send:Dict[str, Any], right_hand:Dict[str, Any], tracker:Dict[str, Any])-> None:
+    """
+    Models a state machine to handle the following states: 'none', 'click', 'prepare', and 'select'.
+
+    This function processes the right hand's position and updates the state based on tracker data.
+    
+    Parameters:
+        send (Dict[str, Any]): The object to be transformed into JSON and sent/processed further.
+        right_hand (Dict[str, Any]): Dictionary containing information about the right hand's position.
+        tracker (Dict[str, Any]): Dictionary containing information needed to transition between states.
+
+    Returns:
+        None: This function modifies the internal state and possibly sends data, but does not return a value.
+
+    Example:
+        >>> process_right_hand(send_data, right_hand_data, tracker_data)
+
+    """
     gesture: str = detect_right_gesture( right_hand['landmark'].landmark )
     #print(gesture)
     if (tracker['label'] == 'none'):
@@ -131,6 +233,22 @@ def process_right_hand(send:Dict[str, Any], right_hand:Dict[str, Any], tracker:D
 
 
 def process_left_hand(send:Dict[str, Any], left_hand:Dict[str, Any], tracker:Dict[str, Any])-> None:
+    """
+    Models a state machine to handle the following states: 'rotation', 'click', 'zoom', and 'switch'.
+
+    This function processes the left hand's position and updates the state based on tracker data.
+    
+    Parameters:
+        send (Dict[str, Any]): The object to be transformed into JSON and sent/processed further.
+        left_hand (Dict[str, Any]): Dictionary containing information about the right hand's position.
+        tracker (Dict[str, Any]): Dictionary containing information needed to transition between states.
+
+    Returns:
+        None: This function modifies the internal state and possibly sends data, but does not return a value.
+
+    Example:
+        >>> process_right_hand(send_data, left_hand_data, tracker_data)
+    """
     gesture: str =detect_left_gesture(left_hand['landmark'].landmark)
     if (tracker['label'] == 'rotation'):
         #print('rotation')
