@@ -140,8 +140,10 @@ class GestureCapture:
 
     def traking_gestures(self) -> None:
         """
-        Process each frame to detect hand's gestures
-        
+        Turn on the camera and read each frame to analyze the hand position and gesture
+
+        Example:
+            >>> traking_gestures() 
         """
 
         left_tracker: Dict[str, Any] = {
