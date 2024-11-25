@@ -1,14 +1,15 @@
 from pydantic import BaseModel
-from enum import Enum
+
 
 class Cursor(BaseModel):
-    x: float
-    y: float
+    x: float = 0
+    y: float = 0
 
 
 class Rotation(BaseModel):
-    dx: float
-    dy: float
+    dx: float = 0
+    dy: float = 0
+
 
 class InputResponse(BaseModel):
     cursor: Cursor

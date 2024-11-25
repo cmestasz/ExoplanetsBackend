@@ -200,12 +200,15 @@ def preprocess_frame(frame):
 
 def get_gesture(left_tracker, right_tracker, frame, hands):
     frame = cv2.flip(frame, 1) # TODO: do we still have to do this
-    processed_frame = preprocess_frame(frame)
+    processed_frame = frame
     results = hands.process(processed_frame)
+
+    cv2.imwrite('frame.jpg', processed_frame)
 
     left_hand = {}
     right_hand = {}
 
+    send = {}
     if results.multi_hand_landmarks:
         for hand_landmarks, hand_handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
             if (hand_handedness.classification[0].label == 'Right'):
@@ -218,7 +221,6 @@ def get_gesture(left_tracker, right_tracker, frame, hands):
                     'landmark': hand_landmarks,
                     'handedness': hand_handedness,
                 }
-        send = {}
 
         if right_hand:
             send['cursor'] = {
@@ -229,4 +231,4 @@ def get_gesture(left_tracker, right_tracker, frame, hands):
         if left_hand:
             process_left_hand(send, left_hand, left_tracker)
 
-        return send
+    return send

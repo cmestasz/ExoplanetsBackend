@@ -32,6 +32,11 @@ async def process_input(file: UploadFile) -> tuple[Cursor, str, Rotation, float]
     np_array = np.frombuffer(file_bytes, np.uint8)
     img = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
 
-    action = get_gesture(left_tracker, right_tracker, img,  hands)
+    send = get_gesture(left_tracker, right_tracker, img,  hands)
 
-    return action
+    cursor = send['cursor'] if 'cursor' in send else Cursor()
+    r_gesture = send['right_gesture'] if 'right_gesture' in send else "none"
+    rotation = send['rotation'] if 'rotation' in send else Rotation()
+    zoom = send['zoom'] if 'zoom' in send else 0.0
+
+    return cursor, r_gesture, rotation, zoom
