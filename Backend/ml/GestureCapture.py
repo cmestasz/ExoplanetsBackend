@@ -169,6 +169,9 @@ class GestureCapture:
             frame = cv2.flip(frame, 1)
             processed_frame = self.preprocess_frame(frame)
             results = self.hands.process(processed_frame)
+            pixel_x = frame.shape[1]
+            pixel_y = frame.shape[0]
+
 
             left_hand: Dict[str, Any] = {}
             right_hand: Dict[str, Any] = {}
@@ -190,6 +193,8 @@ class GestureCapture:
                 send: dict[Any, Any] = {}
 
                 if (right_hand):
+                    pixel_x *= right_hand['landmark'].landmark[8].x
+                    pixel_y *= right_hand['landmark'].landmark[8].y
                     send['cursor'] = {
                         'x': right_hand['landmark'].landmark[8].x,
                         'y': right_hand['landmark'].landmark[8].y,
@@ -204,6 +209,11 @@ class GestureCapture:
                                                      tracker=left_tracker)
 
                 self.send_gesture(send)
+            cv2.circle(frame,
+                       (int(pixel_x), int(pixel_y)),
+                       10,
+                       (0,255,0),
+                       -1)
             cv2.imshow('Gesture Capture', frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
