@@ -123,6 +123,38 @@ def get_zoom(landmark) -> float:
     distance = mean_hand_y - mean_fingers_y
     return distance / reference * 100
 
+def get_cursor(landmark)->Dict[str, float]:
+    x = ( landmark[8].x-landmark[5].x ) / (abs( landmark[17].x - landmark[5].x ))
+    x /=3
+    x = round(x+0.5,3)
+    if x > 1: x = 1
+    if x < 0: x = 0
+
+    mean_mcp_y = statistics.mean([
+        landmark[5].y,
+        landmark[9].y,
+        landmark[13].y,
+        landmark[17].y,
+    ])
+    reference_y =  abs( landmark[0].y - mean_mcp_y )
+    range_y = abs( landmark[5].y - landmark[8].y )
+    y = (range_y-0.07) * reference_y * 80
+    y = 0.5 -y
+
+    if (y < 0): y = 0
+    if (y > 1): y = 1
+    y = round( y, 3)
+
+    if (y < 0): y = 0
+    if (y > 1): y = 1
+
+    
+    print(y)
+    return {
+        'x':x,
+        'y':y,
+    }
+
 def set_reference(landmark, reference:list)-> None:
     """
     This function calculates a distance of reference to calculate the angular velocity
@@ -198,6 +230,8 @@ def process_right_hand(send:Dict[str, Any], right_hand:Dict[str, Any], tracker:D
         >>> process_right_hand(send_data, right_hand_data, tracker_data)
 
     """
+    #get_cursor(right_hand['landmark'].landmark)
+    send['cursor'] = get_cursor(right_hand['landmark'].landmark)
     gesture: str = detect_right_gesture( right_hand['landmark'].landmark )
     #print(gesture)
     if (tracker['label'] == 'none'):
