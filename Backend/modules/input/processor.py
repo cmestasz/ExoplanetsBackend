@@ -326,7 +326,7 @@ def process_left_hand(
     elif (tracker['label'] == 'zoom'):
         if (gesture == 'click' and tracker['counter_no_click'] > 0):
             tracker['counter_click'] += 1
-            if (tracker['counter_click'] > 30):
+            if (tracker['counter_click'] > 10):
                 tracker['last_mode'] = 'zoom'
                 tracker['label'] = 'rotation'
         else: 
