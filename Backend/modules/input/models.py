@@ -1,15 +1,18 @@
 from pydantic import BaseModel
-from enum import Enum
 
-class Action(Enum):
-    LEFT = "left"
-    RIGHT = "right"
-    UP = "up"
-    DOWN = "down"
-    ZOOM_IN = "zoom_in"
-    ZOOM_OUT = "zoom_out"
+
+class Cursor(BaseModel):
+    x: float = 0
+    y: float = 0
+
+
+class Rotation(BaseModel):
+    dx: float = 0
+    dy: float = 0
 
 
 class InputResponse(BaseModel):
-    error: str
-    action: str
+    cursor: Cursor
+    right_gesture: str
+    rotation: Rotation
+    zoom: float

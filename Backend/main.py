@@ -60,10 +60,10 @@ async def get_some_exoplanets() -> ExoplanetsResponse:
     return ExoplanetsResponse(exoplanets=exoplanets)
 
 
-@app.post("/get_action_by_image")
-async def get_action_by_image(file: UploadFile) -> InputResponse:
-    action = await process_input(file)
-    return InputResponse(action=action)
+@app.post("/get_action")
+async def get_action(file: UploadFile) -> InputResponse:
+    cursor, r_gesture, rotation, zoom = await process_input(file)
+    return InputResponse(cursor=cursor, right_gesture=r_gesture, rotation=rotation, zoom=zoom)
 
 
 @app.post("/register")
