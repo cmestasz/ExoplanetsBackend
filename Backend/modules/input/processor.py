@@ -377,7 +377,7 @@ def preprocess_frame(frame):
 
 def get_gesture(left_tracker, right_tracker, frame, hands):
     frame = cv2.flip(frame, 1)  # TODO: do we still have to do this
-    processed_frame = frame
+    processed_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     results = hands.process(processed_frame)
 
     cv2.imwrite("frame.jpg", processed_frame)
