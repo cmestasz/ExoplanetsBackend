@@ -140,42 +140,35 @@ def get_zoom(landmark) -> float:
 
 
 def get_cursor(landmark) -> dict[str, float]:
-    x = (landmark[8].x - landmark[5].x) / (abs(landmark[17].x - landmark[5].x))
-    x /= 3
-    x = round(x + 0.5, 3)
-    if x > 1:
-        x = 1
-    if x < 0:
-        x = 0
+    x = ( landmark[8].x-landmark[5].x ) / (abs( landmark[17].x - landmark[5].x ))
+    x /=3
+    x = round(x+0.5,3)
+    if x > 1: x = 1
+    if x < 0: x = 0
 
-    mean_mcp_y = statistics.mean(
-        [
-            landmark[5].y,
-            landmark[9].y,
-            landmark[13].y,
-            landmark[17].y,
-        ]
-    )
-    reference_y = abs(landmark[0].y - mean_mcp_y)
-    range_y = abs(landmark[5].y - landmark[8].y)
-    y = (range_y - 0.07) * reference_y * 80
-    y = 0.5 - y
+    mean_mcp_y = statistics.mean([
+        landmark[5].y,
+        landmark[9].y,
+        landmark[13].y,
+        landmark[17].y,
+    ])
+    reference_y =  abs( landmark[0].y - round( mean_mcp_y  , 2))
+    range_y = landmark[8].y - landmark[6].y
+    y = range_y / reference_y / 3
+    y = 0.5 +y
 
-    if y < 0:
-        y = 0
-    if y > 1:
-        y = 1
-    y = round(y, 3)
+    if (y < 0): y = 0
+    if (y > 1): y = 1
+    y = round( y, 3)
 
-    if y < 0:
-        y = 0
-    if y > 1:
-        y = 1
+    if (y < 0): y = 0
+    if (y > 1): y = 1
 
+    
     print(y)
     return {
-        "x": x,
-        "y": y,
+        'x':x,
+        'y':y,
     }
 
 
