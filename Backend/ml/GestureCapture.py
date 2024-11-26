@@ -124,7 +124,7 @@ class GestureCapture:
                                                      left_hand=left_hand,
                                                      tracker=left_tracker)
 
-                #self.send_gesture(send)
+                self.send_gesture(send)
             cv2.circle(frame,
                        (int(pixel_x), int(pixel_y)),
                        10,

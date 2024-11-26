@@ -42,7 +42,8 @@ def is_click(hand_landmarks, side:str)-> bool:
 
     flag = alignment and \
         ( -0.07 < range_index_finger_x < 0.07 ) and \
-        middle_hand_y < mean_finger_y
+        middle_hand_y < mean_finger_y and \
+        hand_landmarks[10].y > hand_landmarks[6].y
     if (side == 'left'):
         flag = flag and hand_landmarks[4].x > hand_landmarks[3].x
     elif (side == 'right'):
@@ -136,9 +137,10 @@ def get_cursor(landmark)->Dict[str, float]:
         landmark[13].y,
         landmark[17].y,
     ])
-    reference_y =  abs( landmark[0].y - round( mean_mcp_y  , 2))
+    reference_y =  abs( round( landmark[0].y , 2) - round( mean_mcp_y  , 1))
     range_y = landmark[8].y - landmark[6].y
     y = range_y / reference_y 
+    y = -y
     y = 0.5 +y
 
     if (y < 0): y = 0
@@ -297,7 +299,8 @@ def process_left_hand(send:Dict[str, Any], left_hand:Dict[str, Any], tracker:Dic
         else:
             if (tracker['counter_no_click'] > 10):
                 tracker['last_mode'] = 'rotation'
-                tracker['label'] = 'switch'
+                tracker['counter_no_click'] = 0
+                tracker['label'] = 'zoom'
                 tracker['counter_click'] = 16
             else: tracker['counter_no_click'] += 1
     elif (tracker['label'] == 'zoom'):
@@ -305,7 +308,7 @@ def process_left_hand(send:Dict[str, Any], left_hand:Dict[str, Any], tracker:Dic
             tracker['counter_click'] += 1
             if (tracker['counter_click'] > 30):
                 tracker['last_mode'] = 'zoom'
-                tracker['label'] = 'switch'
+                tracker['label'] = 'rotation'
         else: 
             send['zoom'] = get_zoom(left_hand['landmark'].landmark)
             tracker['counter_click'] = 0
