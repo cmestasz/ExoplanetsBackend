@@ -154,7 +154,8 @@ def get_cursor(landmark) -> dict[str, float]:
     ])
     reference_y =  abs( landmark[0].y - round( mean_mcp_y  , 2))
     range_y = landmark[8].y - landmark[6].y
-    y = range_y / reference_y / 3
+    y = range_y / reference_y / 2
+    y = -y
     y = 0.5 +y
 
     if (y < 0): y = 0
@@ -165,7 +166,7 @@ def get_cursor(landmark) -> dict[str, float]:
     if (y > 1): y = 1
 
     
-    print(y)
+    #print(y)
     return {
         'x':x,
         'y':y,
