@@ -129,10 +129,30 @@ def get_cursor(landmark)->Dict[str, float]:
     x = round(x+0.5,3)
     if x > 1: x = 1
     if x < 0: x = 0
-    print(x)
+
+    mean_mcp_y = statistics.mean([
+        landmark[5].y,
+        landmark[9].y,
+        landmark[13].y,
+        landmark[17].y,
+    ])
+    reference_y =  abs( landmark[0].y - mean_mcp_y )
+    range_y = abs( landmark[5].y - landmark[8].y )
+    y = (range_y-0.07) * reference_y * 80
+    y = 0.5 -y
+
+    if (y < 0): y = 0
+    if (y > 1): y = 1
+    y = round( y, 3)
+
+    if (y < 0): y = 0
+    if (y > 1): y = 1
+
+    
+    print(y)
     return {
         'x':x,
-        'y':0.5,
+        'y':y,
     }
 
 def set_reference(landmark, reference:list)-> None:
