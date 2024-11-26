@@ -193,22 +193,18 @@ class GestureCapture:
                 send: dict[Any, Any] = {}
 
                 if (right_hand):
-                    pixel_x *= right_hand['landmark'].landmark[8].x
-                    pixel_y *= right_hand['landmark'].landmark[8].y
-                    send['cursor'] = {
-                        'x': right_hand['landmark'].landmark[8].x,
-                        'y': right_hand['landmark'].landmark[8].y,
-                    }
                     #GestureMachine.process_right_hand()
                     GestureMachine.process_right_hand(send=send,
                                                       right_hand=right_hand,
                                                       tracker=right_tracker)
+                    pixel_x *= send['cursor']['x']
+                    pixel_y *= send['cursor']['y']
                 if (left_hand):
                     GestureMachine.process_left_hand(send=send,
                                                      left_hand=left_hand,
                                                      tracker=left_tracker)
 
-                self.send_gesture(send)
+                #self.send_gesture(send)
             cv2.circle(frame,
                        (int(pixel_x), int(pixel_y)),
                        10,
