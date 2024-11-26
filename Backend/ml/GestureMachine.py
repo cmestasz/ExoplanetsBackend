@@ -136,10 +136,10 @@ def get_cursor(landmark)->Dict[str, float]:
         landmark[13].y,
         landmark[17].y,
     ])
-    reference_y =  abs( landmark[0].y - mean_mcp_y )
-    range_y = abs( landmark[5].y - landmark[8].y )
-    y = (range_y-0.07) * reference_y * 80
-    y = 0.5 -y
+    reference_y =  abs( landmark[0].y - round( mean_mcp_y  , 2))
+    range_y = landmark[8].y - landmark[6].y
+    y = range_y / reference_y 
+    y = 0.5 +y
 
     if (y < 0): y = 0
     if (y > 1): y = 1
