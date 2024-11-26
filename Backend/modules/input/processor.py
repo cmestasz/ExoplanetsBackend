@@ -21,21 +21,17 @@ def is_click(hand_landmarks, side: str) -> bool:
         True
     """
     flag = False
-    middle_hand_y = statistics.mean(
-        [
-            hand_landmarks[5].y,
-            hand_landmarks[9].y,
-            hand_landmarks[13].y,
-            hand_landmarks[17].y,
-        ]
-    )
-    mean_finger_y = statistics.mean(
-        [
-            hand_landmarks[12].y,
-            hand_landmarks[16].y,
-            hand_landmarks[20].y,
-        ]
-    )
+    middle_hand_y = statistics.mean([
+        hand_landmarks[5].y,
+        hand_landmarks[9].y,
+        hand_landmarks[13].y,
+        hand_landmarks[17].y
+    ])
+    mean_finger_y = statistics.mean([
+        hand_landmarks[12].y,
+        hand_landmarks[16].y,
+        hand_landmarks[20].y,
+    ])
     index_finger_points = [
         hand_landmarks[8].x,
         hand_landmarks[7].x,
@@ -44,15 +40,16 @@ def is_click(hand_landmarks, side: str) -> bool:
     range_index_finger_x = max(index_finger_points) - max(index_finger_points)
     alignment = hand_landmarks[8].y < hand_landmarks[7].y < hand_landmarks[6].y
 
-    flag = (
-        alignment
-        and (-0.07 < range_index_finger_x < 0.07)
-        and middle_hand_y < mean_finger_y
-    )
-    if side == "left":
+
+    flag = alignment and \
+        ( -0.07 < range_index_finger_x < 0.07 ) and \
+        middle_hand_y < mean_finger_y and \
+        hand_landmarks[10].y > hand_landmarks[6].y
+    if (side == 'left'):
         flag = flag and hand_landmarks[4].x > hand_landmarks[3].x
-    elif side == "right":
+    elif (side == 'right'):
         flag = flag and hand_landmarks[4].x < hand_landmarks[3].x
+        
 
     return flag
 
@@ -296,7 +293,7 @@ def process_left_hand(
     Models a state machine to handle the following states: 'rotation', 'click', 'zoom', and 'switch'.
 
     This function processes the left hand's position and updates the state based on tracker data.
-
+    
     Parameters:
         send (Dict[str, Any]): The object to be transformed into JSON and sent/processed further.
         left_hand (Dict[str, Any]): Dictionary containing information about the right hand's position.
@@ -308,61 +305,60 @@ def process_left_hand(
     Example:
         >>> process_right_hand(send_data, left_hand_data, tracker_data)
     """
-    gesture: str = detect_left_gesture(left_hand["landmark"].landmark)
-    if tracker["label"] == "rotation":
-        # print('rotation')
-        if gesture == "click":
-            tracker["counter_no_click"] = 0
-            dx, dy = get_rotation(left_hand["landmark"].landmark, tracker["reference"])
-            # print(f"{dx}\n{dy}")
-            send["rotation"] = {
-                "dx": dx,
-                "dy": dy,
+    gesture: str =detect_left_gesture(left_hand['landmark'].landmark)
+    if (tracker['label'] == 'rotation'):
+        #print('rotation')
+        if (gesture=='click'):
+            tracker['counter_no_click'] = 0
+            dx, dy = get_rotation(left_hand['landmark'].landmark, tracker['reference'])
+            #print(f"{dx}\n{dy}")
+            send['rotation'] = {
+                'dx':dx,
+                'dy':dy,
             }
         else:
-            if tracker["counter_no_click"] > 10:
-                tracker["last_mode"] = "rotation"
-                tracker["label"] = "switch"
-                tracker["counter_click"] = 16
-            else:
-                tracker["counter_no_click"] += 1
-    elif tracker["label"] == "zoom":
-        if gesture == "click" and tracker["counter_no_click"] > 0:
-            tracker["counter_click"] += 1
-            if tracker["counter_click"] > 30:
-                tracker["last_mode"] = "zoom"
-                tracker["label"] = "switch"
-        else:
-            send["zoom"] = get_zoom(left_hand["landmark"].landmark)
-            tracker["counter_click"] = 0
-            tracker["counter_no_click"] = 1
+            if (tracker['counter_no_click'] > 10):
+                tracker['last_mode'] = 'rotation'
+                tracker['counter_no_click'] = 0
+                tracker['label'] = 'zoom'
+                tracker['counter_click'] = 16
+            else: tracker['counter_no_click'] += 1
+    elif (tracker['label'] == 'zoom'):
+        if (gesture == 'click' and tracker['counter_no_click'] > 0):
+            tracker['counter_click'] += 1
+            if (tracker['counter_click'] > 30):
+                tracker['last_mode'] = 'zoom'
+                tracker['label'] = 'rotation'
+        else: 
+            send['zoom'] = get_zoom(left_hand['landmark'].landmark)
+            tracker['counter_click'] = 0
+            tracker['counter_no_click'] = 1
 
-    elif tracker["label"] == "switch":
-        if gesture == "click":
-            tracker["counter_click"] += 1
-            if tracker["counter_click"] > 15 and 10 < tracker["counter_no_click"] < 30:
-                if tracker["last_mode"] == "rotation":
-                    tracker["label"] = "zoom"
+    elif (tracker['label'] == 'switch'):
+        if (gesture == 'click'):
+            tracker['counter_click'] += 1
+            if (tracker['counter_click'] > 15 and 10< tracker['counter_no_click'] < 30):
+                if (tracker['last_mode'] == 'rotation'): tracker['label'] = 'zoom'
                 else:
-                    tracker["label"] = "rotation"
-                    set_reference(left_hand["landmark"].landmark, tracker["reference"])
-                tracker["counter_click"] = 0
-                tracker["counter_no_click"] = 0
-            elif tracker["counter_click"] > 30:
-                tracker["label"] = "rotation"
+                    tracker['label'] = 'rotation'
+                    set_reference(left_hand['landmark'].landmark,tracker['reference'])
+                tracker['counter_click'] = 0
+                tracker['counter_no_click'] = 0
+            elif (tracker['counter_click'] > 30):
+                tracker['label'] = 'rotation'
             else:
-                tracker["counter_no_click"] = 0
-        else:
-            if tracker["counter_no_click"] < 15:
-                tracker["counter_no_click"] += 1
+                tracker['counter_no_click'] = 0
+        else: 
+            if (tracker['counter_no_click'] < 15):
+                tracker['counter_no_click'] += 1
             else:
-                tracker["counter_click"] = 0
+                tracker['counter_click'] = 0
     else:
-        if gesture == "click":
-            tracker["counter_click"] += 1
-            if tracker["counter_click"] > 10:
-                tracker["label"] = "rotation"
-                set_reference(left_hand["landmark"].landmark, tracker["reference"])
+        if (gesture == 'click'):
+            tracker['counter_click'] += 1
+            if (tracker['counter_click'] > 10):
+                tracker['label'] = 'rotation'
+                set_reference(left_hand['landmark'].landmark,tracker['reference'])
 
 
 def preprocess_frame(frame):
