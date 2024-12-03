@@ -21,12 +21,9 @@ from .modules.users.models import (
     CreateConstellationResponse,
 )
 from .modules.users.services import (
-    registerUser,
-    loginUser,
     createConstellation,
     getAllConstellationsByUser,
     getActiveConstellationsByUser,
-    init_db,
 )
 from supabase import create_client, Client, ClientOptions, AClient
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect

@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 from hashlib import sha256
 from dotenv import load_dotenv
+from supabase import create_client, Client
 import os
 from .models import *
 
@@ -13,41 +14,6 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# Crear tablas si no existen
-def init_db():
-    session = SessionLocal()
-    session.execute(
-        text(
-            """
-        CREATE TABLE IF NOT EXISTS userst (
-            id SERIAL PRIMARY KEY,
-            username VARCHAR(100) UNIQUE NOT NULL,
-            password VARCHAR(255) NOT NULL
-        );
-        CREATE TABLE IF NOT EXISTS constellations (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(100) NOT NULL,
-            user_id INTEGER REFERENCES userst(id),
-            ra FLOAT NOT NULL,
-            dec FLOAT NOT NULL,
-            dist FLOAT NOT NULL
-        );
-        CREATE TABLE IF NOT EXISTS stars (
-            id SERIAL PRIMARY KEY,
-            ext_id VARCHAR(100) NOT NULL,
-            constellation_id INTEGER REFERENCES constellations(id)
-        );
-        CREATE TABLE IF NOT EXISTS star_connections (
-            id SERIAL PRIMARY KEY,
-            star_id INTEGER REFERENCES stars(id),
-            connected_star_id INTEGER
-        );
-        """
-        )
-    )
-
-    session.commit()
 
 
 # Funciones auxiliares
