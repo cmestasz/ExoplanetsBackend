@@ -1,0 +1,16 @@
+{
+    "auth_page": {
+        "error": {
+            "title" : "Error de autenticación - Exoplanets",
+            "main_message" : "Error de autenticación",
+            "sub_message" : "¡Ups! Ocurrió un error. Inténtalo de nuevo o reporta el error. Visita nuestro repositorio o envíanos un correo electrónico."
+        },
+        "success": {
+            "title" : "Autenticación completada - Exoplanets",
+            "main_message" : "Autenticación completada",
+            "sub_message" : "Gracias por unirte a Exoplanets. Para dudas, sugerencias o reporte de errores visita nuestro repositorio o envíanos un email"
+        },
+        "repo" : "Repositorio",
+        "email" : "Envíanos un email"
+    }
+}

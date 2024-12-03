@@ -1,0 +1,16 @@
+{
+    "auth_page": {
+        "error": {
+            "title" : "Authentication error - Exoplanets",
+            "main_message" : "Authentication error",
+            "sub_message" : "Oops! An error occurred. Please try again or report the error. Visit our repository or send us an email."
+        },
+        "success": {
+            "title" : "Authentication Completed - Exoplanets",
+            "main_message" : "Authentication Completed",
+            "sub_message" : "Thank you for joining Exoplanets. For questions, suggestions or bug reports please visit our repository or send us an email."
+        },
+        "repo" : "Repository",
+        "email" : "Send us an email"
+    }
+}
