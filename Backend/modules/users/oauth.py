@@ -32,7 +32,7 @@ def login ():
     })
     return RedirectResponse(url=response.url)
 
-@app.get("/logout")
+@app.post("/logout")
 async def logout ():
     if "client_channel" in active_websockets:
         websocket: WebSocket = active_websockets["client_channel"]
