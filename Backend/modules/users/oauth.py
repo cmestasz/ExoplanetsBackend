@@ -40,12 +40,12 @@ async def logout ():
         active_websockets.pop("client_channel", None)
         print("WebSocket connection closed.")
 
-    response = supabase.auth.sign_out()
-
-    if response.get("error"):
-        raise HTTPException(status_code=500, detail="Error during logout: " + response["error"]["message"])
+    try:
+        supabase.auth.sign_out()
+    except:
+        raise HTTPException(status_code=500, detail="Error during logout")
     
-    return {"message": "Logout successful"}
+    return {"message": "Logout successful", "status": 200}
 
 @app.get("/callback")
 def callback(request: Request):
@@ -55,19 +55,21 @@ def callback(request: Request):
     })
 
     token = response.session.access_token
-    url = f"http://localhost:8000/success?token={token}"
+    refresh_token = response.session.refresh_token
+    url = f"http://localhost:8000/success?token={token}&refresh_token={refresh_token}"
 
     return RedirectResponse(url=url)    
 
 @app.get("/success")
 async def success (request: Request):
     token = request.query_params.get("token")
+    refresh_token = request.query_params.get("refresh_token")
 
-    if token is None:
+    if token is None or refresh_token is None:
         return "Invalid token"
     if "client_channel" in active_websockets:
         websocket : WebSocket = active_websockets["client_channel"]
-        await websocket.send_text(token)
+        await websocket.send_json({ "token": token, "refresh_token": refresh_token })
     else:
         raise HTTPException(status_code=400, detail="No active WebSocket connection for the client channel.")
 
