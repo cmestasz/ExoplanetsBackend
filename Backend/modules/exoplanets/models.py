@@ -12,7 +12,7 @@ class ExoplanetsByNameRequest(BaseModel):
     name: str
 
 class RequestExoplanets(BaseModel):
-    quantity: int | None
+    index: int | None
     amount: int | None
 
 class ExoplanetsResponse(BaseModel):
