@@ -118,7 +118,7 @@ def start_db():
 @app.get("/login")
 def login(request: Request):
 
-    lang = request.query_params.get("lang")W
+    lang = request.query_params.get("lang")
 
     if lang == "en":
         global language
@@ -179,7 +179,7 @@ async def success (request: Request):
 
     global error
     global langugage
-    
+
     file_path = f"./{language}.json"
 
     with open(file_path, "r", encoding="utf-8") as f:
