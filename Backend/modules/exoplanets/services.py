@@ -1,6 +1,10 @@
 import astropy.table
-from .models import Exoplanet
+from fastapi import HTTPException
+from .models import Exoplanet, RequestExoplanets
+from pydantic import BaseModel
 import pyvo as vo
+import pandas as pd
+
 
 client = vo.dal.TAPService("https://exoplanetarchive.ipac.caltech.edu/TAP")
 
@@ -20,14 +24,27 @@ def result_to_exoplanet_list(result: astropy.table) -> list[Exoplanet]:
     return exoplanets
 
 
-async def find_some_exoplanets() -> list[Exoplanet]:
+async def find_some_exoplanets(index: int, amount: int)->str: 
     global client
-    query = "SELECT pl_name, ra, dec, parallax FROM ps LIMIT 20"
+    query = f"""
+        SELECT TOP 10
+            pl_name AS "Planet Name", 
+            hostname AS "Host Star Name",
+            sy_dist AS "Distance from Earth (parsecs)",
+            pl_orbsmax AS "Orbital Distance (AU)",
+            pl_eqt AS "Equilibrium Temperature (K)",
+            pl_rade AS "Radius (Earth Radii)"
+        FROM 
+            ps
+        WHERE 
+            sy_dist IS NOT NULL
+        ORDER BY 
+            pl_name
+
+    """
     result = client.search(query)
 
-    a_table: astropy.table = result.to_table()
-    exoplanets = result_to_exoplanet_list(a_table)
-    return exoplanets
+    return result.to_table().to_pandas().to_json()
 
 
 async def find_exoplanets_by_name(name: str) -> list[Exoplanet]:

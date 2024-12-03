@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, Response
+from urllib3.response import HTTPResponse
 from .modules.stars.services import load_around_position, load_around_id
 from .modules.stars.models import (
     SurroundingsIdRequest,
@@ -7,7 +8,7 @@ from .modules.stars.models import (
     SurroundingsIdResponse,
 )
 from .modules.exoplanets.services import find_exoplanets_by_name, find_some_exoplanets
-from .modules.exoplanets.models import ExoplanetsByNameRequest, ExoplanetsResponse
+from .modules.exoplanets.models import ExoplanetsByNameRequest, ExoplanetsResponse, RequestExoplanets
 from .modules.input.models import InputResponse
 from .modules.input.services import process_input
 from .modules.users.models import (
@@ -27,9 +28,9 @@ from .modules.users.services import (
 )
 from supabase import create_client, Client, ClientOptions, AClient
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 from fastapi.security import OAuth2AuthorizationCodeBearer
-import os, json
+import os
 from dotenv import load_dotenv
 
 
@@ -74,9 +75,11 @@ async def get_exoplanets_by_name(
 
 
 @app.post("/get_some_exoplanets")
-async def get_some_exoplanets() -> ExoplanetsResponse:
-    exoplanets = await find_some_exoplanets()
-    return ExoplanetsResponse(exoplanets=exoplanets)
+async def get_some_exoplanets(request: RequestExoplanets):
+    if not request.quantity or not request.amount:
+        return HTTPException(status_code=400, detail="Exoplanet's index and amount needed")
+    exoplanets:str = await find_some_exoplanets(request.quantity, request.amount)
+    return JSONResponse(content=exoplanets, status_code=200)
 
 
 @app.post("/get_action")
