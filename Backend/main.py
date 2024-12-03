@@ -107,11 +107,6 @@ async def list_active_constellations(
     )
     return ConstellationsResponse(constellations=constellations)
 
-
-@app.post("/admin/start_db")
-def start_db():
-    init_db()
-
 @app.get("/login")
 def login(request: Request):
 
