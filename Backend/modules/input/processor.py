@@ -279,7 +279,9 @@ def process_right_hand(
             tracker["label"] = "none"
             tracker["counter_click"] = 0
     elif tracker["label"] == "select":
-        if not gesture == "click":
+        if gesture == "click":
+            send["right_gesture"] = "select"
+        elif gesture == "click":
             # print('deselect')
             send["right_gesture"] = "deselect"
             tracker["label"] = "none"
