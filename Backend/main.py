@@ -120,10 +120,8 @@ def login(request: Request):
 
     lang = request.query_params.get("lang")
 
-    if lang != "en" and lang != "es":
-        language = "es"
-    
-    language = lang
+    if lang == "en":
+        language = lang
 
     try:
         redirect_url = "http://localhost:8000/callback"
