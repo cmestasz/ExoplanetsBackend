@@ -205,10 +205,11 @@ async def success (request: Request):
 
         a {
             text-decoration: none;
+            color: inherit;
         }
 
         a:visited {
-            text-decoration: none;
+            color: inherit;
         }
 
         :root {
