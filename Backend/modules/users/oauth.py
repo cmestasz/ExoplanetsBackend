@@ -32,6 +32,20 @@ def login ():
     })
     return RedirectResponse(url=response.url)
 
+@app.get("/logout")
+async def logout ():
+    if "client_channel" in active_websockets:
+        websocket: WebSocket = active_websockets["client_channel"]
+        await websocket.close()
+        active_websockets.pop("client_channel", None)
+        print("WebSocket connection closed.")
+
+    response = supabase.auth.sign_out()
+
+    if response.get("error"):
+        raise HTTPException(status_code=500, detail="Error during logout: " + response["error"]["message"])
+    
+    return {"message": "Logout successful"}
 
 @app.get("/callback")
 def callback(request: Request):
