@@ -1,5 +1,5 @@
 from supabase import create_client, Client, ClientOptions, AClient
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2AuthorizationCodeBearer
 import os
@@ -12,6 +12,8 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 JWT_KEY = os.getenv("JWT_KEY")
 ALGORITHM = "HS256"
+
+active_websockets = {}
 
 app = FastAPI()
 
@@ -31,7 +33,6 @@ def login ():
     return RedirectResponse(url=response.url)
 
 
-
 @app.get("/callback")
 def callback(request: Request):
     code = request.query_params.get("code")
@@ -45,6 +46,32 @@ def callback(request: Request):
     return RedirectResponse(url=url)    
 
 @app.get("/success")
-def success (request: Request):
+async def success (request: Request):
     token = request.query_params.get("token")
-    return f"Sucessfully logged in, your token is {token}"
+
+    if token is None:
+        return "Invalid token"
+    if "client_channel" in active_websockets:
+        websocket : WebSocket = active_websockets["client_channel"]
+        await websocket.send_text(token)
+    else:
+        raise HTTPException(status_code=400, detail="No active WebSocket connection for the client channel.")
+
+    return f"Token sent to client WebSocket: {token}"
+
+@app.websocket("/login_flow")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+
+    active_websockets["client_channel"] = websocket
+
+    try:
+        while True:
+            message = await websocket.receive_text()
+            if message == "token_received":
+                print("Client confirmed token reception. Closing WebSocket...")
+                break 
+    except WebSocketDisconnect:
+        print("WebSocket disconnected")
+    finally:
+        active_websockets.pop("client_channel", None)
