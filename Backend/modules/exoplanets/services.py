@@ -27,7 +27,8 @@ def result_to_exoplanet_list(result: astropy.table) -> list[Exoplanet]:
 async def find_some_exoplanets(index: int, amount: int)->str: 
     global client
     query = f"""
-        SELECT TOP 10
+        SELECT 
+            TOP 10
             pl_name AS "Planet Name", 
             hostname AS "Host Star Name",
             sy_dist AS "Distance from Earth (parsecs)",
@@ -35,12 +36,16 @@ async def find_some_exoplanets(index: int, amount: int)->str:
             pl_eqt AS "Equilibrium Temperature (K)",
             pl_rade AS "Radius (Earth Radii)"
         FROM 
-            ps
+            PSCompPars
         WHERE 
-            sy_dist IS NOT NULL
+            pl_name IS NOT NULL AND
+            hostname IS NOT NULL AND
+            sy_dist IS NOT NULL AND
+            pl_orbsmax IS NOT NULL AND
+            pl_eqt IS NOT NULL AND
+            pl_rade IS NOT NULL
         ORDER BY 
             pl_name
-
     """
     result = client.search(query)
 
