@@ -4,6 +4,10 @@ from .models import Exoplanet, RequestExoplanets
 from pydantic import BaseModel
 import pyvo as vo
 import pandas as pd
+import requests
+import xml.etree.ElementTree as ET
+import json
+import re
 
 
 client = vo.dal.TAPService("https://exoplanetarchive.ipac.caltech.edu/TAP")
@@ -24,32 +28,63 @@ def result_to_exoplanet_list(result: astropy.table) -> list[Exoplanet]:
     return exoplanets
 
 
-async def find_some_exoplanets(index: int, amount: int)->str: 
-    global client
-    query = f"""
-        SELECT 
-            TOP 10
-            pl_name AS "Planet Name", 
-            hostname AS "Host Star Name",
-            sy_dist AS "Distance from Earth (parsecs)",
-            pl_orbsmax AS "Orbital Distance (AU)",
-            pl_eqt AS "Equilibrium Temperature (K)",
-            pl_rade AS "Radius (Earth Radii)"
-        FROM 
-            PSCompPars
-        WHERE 
-            pl_name IS NOT NULL AND
-            hostname IS NOT NULL AND
-            sy_dist IS NOT NULL AND
-            pl_orbsmax IS NOT NULL AND
-            pl_eqt IS NOT NULL AND
-            pl_rade IS NOT NULL
-        ORDER BY 
-            pl_name
-    """
-    result = client.search(query)
+async def find_some_exoplanets(index: int, amount: int)->tuple[bool, str]:
 
-    return result.to_table().to_pandas().to_json()
+
+    # URL base
+    url = "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/IceTable/nph-iceTbl"
+
+    # Parámetros de la solicitud (ajusta según sea necesario)
+    params = {
+        "log": "TblView.ExoplanetArchive",
+        "workspace": "2024.12.02_10.04.18_002933/TblView/2024.12.04_07.59.56_024162",
+        "table": "/exodata/kvmexoweb/ExoTables/PS.tbl",
+        "pltxaxis": "",
+        "pltyaxis": "",
+        "checkbox": "1",
+        "initialcheckedval": "1",
+        "splitlabel": "0",
+        "wsoverride": "1",
+        "rowLabel": "rowlabel",
+        "connector": "true",
+        "dhx_no_header": "1",
+        "posStart": "10",  # Inicio de las filas
+        "count": "3",    # Cantidad de filas a devolver
+        "dhxr1733329810121": "1"
+    }
+
+    response = requests.get(url, params=params)
+
+    if response.status_code == 200:
+        root = ET.fromstring(response.text)
+
+        # Crear una lista para almacenar los datos
+        planets = []
+
+        # Extraer información de las filas (<row>)
+        for row in root.findall(".//row"):
+            planet_data = {}
+            cells = row.findall("cell")
+            if len(cells) > 2:  # Asegúrate de que haya suficientes datos
+                planet_data["id"] = row.attrib.get("id")
+                planet_data["planet name"] = re.findall(r">([^<]+)<",cells[1].text)[0]
+                planet_data["star name"] = cells[2].text
+                planet_data["number of stars"] = cells[3].text
+                planet_data["discovery year"] = cells[8].text
+                planet_data["planet radius (Earth)"] = re.findall(r">([^<]+)<", cells[15].text)[0]
+                planet_data["ra (sexagesimal)"] = cells[33].text
+                planet_data["dec (sexagesimal)"] = cells[34].text
+                planet_data["distance (pc)"] = re.findall(r">([^<]+)<", cells[35].text)[0]
+            planets.append(planet_data)
+
+        # Convertir a JSON
+        json_data = json.dumps(planets)
+        return True, json_data
+    else:
+        print(f"Error: {response.status_code}")
+        return False, ""
+
+
 
 
 async def find_exoplanets_by_name(name: str) -> list[Exoplanet]:
