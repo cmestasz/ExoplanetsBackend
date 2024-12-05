@@ -1,7 +1,4 @@
 from fastapi import HTTPException
-from sqlalchemy import create_engine, text
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import sessionmaker
 from hashlib import sha256
 from dotenv import load_dotenv
 from supabase import create_client, Client
