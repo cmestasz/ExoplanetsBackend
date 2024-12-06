@@ -113,6 +113,7 @@ async def find_some_exoplanets(index: int, amount: int)->tuple[bool, str]:
 
 async def find_exoplanets_by_name(name: str) -> str:
     global client
+    name = name.replace(' ','%')
     query = f"SELECT pl_name, ra, dec, parallax FROM ps WHERE pl_name LIKE '%{name}%' LIMIT 20"
     query = f"""
     SELECT DISTINCT
@@ -126,18 +127,21 @@ async def find_exoplanets_by_name(name: str) -> str:
         sy_dist AS "dist"
     FROM
         ps
-    WHERE pl_name = '{name}'
+    WHERE pl_name LIKE '%{name}%'
     """
     result = client.search(query)
     print(result)
+    planet_set = set()
     if len(result) == 0: return "";
     planets = []
     for row in result:
         p = {}
+        if row['name'] in planet_set: continue
         for key in row:
             val = str( row[key] )
             p[key] = val if val != 'nan' else ""
         planets.append(p)
+        planet_set.add(row['name'])
     return json.dumps(planets)
 
 
