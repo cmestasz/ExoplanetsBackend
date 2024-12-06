@@ -76,9 +76,11 @@ async def get_exoplanets_by_name(
 
 @app.post("/get_some_exoplanets")
 async def get_some_exoplanets(request: RequestExoplanets):
-    if not request.index or not request.amount:
+    if request.index==None or not request.amount:
         return HTTPException(status_code=400, detail="Exoplanet's index and amount needed")
-    exoplanets:str = await find_some_exoplanets(request.index, request.amount)
+    status, exoplanets= await find_some_exoplanets(request.index, request.amount)
+    if not status: 
+        return HTTPException(status_code=400, detail="Error in request to ExoplanetArchive")
     return JSONResponse(content=exoplanets, status_code=200)
 
 

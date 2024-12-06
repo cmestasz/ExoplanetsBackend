@@ -37,7 +37,7 @@ async def find_some_exoplanets(index: int, amount: int)->tuple[bool, str]:
     # Parámetros de la solicitud (ajusta según sea necesario)
     params = {
         "log": "TblView.ExoplanetArchive",
-        "workspace": "2024.12.02_10.04.18_002933/TblView/2024.12.04_07.59.56_024162",
+        "workspace": "2024.12.02_10.04.18_002933/TblView/2024.12.05_16.11.34_009010",
         "table": "/exodata/kvmexoweb/ExoTables/PS.tbl",
         "pltxaxis": "",
         "pltyaxis": "",
@@ -48,9 +48,9 @@ async def find_some_exoplanets(index: int, amount: int)->tuple[bool, str]:
         "rowLabel": "rowlabel",
         "connector": "true",
         "dhx_no_header": "1",
-        "posStart": "10",  # Inicio de las filas
-        "count": "3",    # Cantidad de filas a devolver
-        "dhxr1733329810121": "1"
+        "posStart": index,  # Inicio de las filas
+        "count": amount,    # Cantidad de filas a devolver
+        "dhxr1733443898337": "1"
     }
 
     response = requests.get(url, params=params)
@@ -67,14 +67,32 @@ async def find_some_exoplanets(index: int, amount: int)->tuple[bool, str]:
             cells = row.findall("cell")
             if len(cells) > 2:  # Asegúrate de que haya suficientes datos
                 planet_data["id"] = row.attrib.get("id")
-                planet_data["planet name"] = re.findall(r">([^<]+)<",cells[1].text)[0]
-                planet_data["star name"] = cells[2].text
-                planet_data["number of stars"] = cells[3].text
+                #print("------------->", cells[2].text)
+                planet_data["planet name"] = re.findall(r">([^<]+)<",cells[2].text)[0]
+                planet_data["star name"] = cells[3].text
+                planet_data["number of stars"] = cells[5].text
                 planet_data["discovery year"] = cells[8].text
-                planet_data["planet radius (Earth)"] = re.findall(r">([^<]+)<", cells[15].text)[0]
+                tmp =  re.findall(r">([^<]+)<", cells[15].text)
+                if (len(tmp)>0):
+                    planet_data["planet radius (Earth)"] = tmp[0]
+                else: 
+                    tmp = re.findall(r"\d+\.\d+(?=&)",cells[15].text)
+                    if len(tmp)>0: 
+                        planet_data["planet radius (Earth)"] = tmp[0]
+                    else:
+                        planet_data["planet radius (Earth)"] = ""
                 planet_data["ra (sexagesimal)"] = cells[33].text
                 planet_data["dec (sexagesimal)"] = cells[34].text
-                planet_data["distance (pc)"] = re.findall(r">([^<]+)<", cells[35].text)[0]
+                print("----------> ", cells[35].text)
+                tmp =  re.findall(r">([^<]+)<", cells[35].text)
+                if (len(tmp) > 0):
+                    planet_data["distance (pc)"] = tmp[0]
+                else: 
+                    tmp = re.findall(r"\d+\.\d+(?=&)",cells[35].text)
+                    if len(tmp)>0: 
+                        planet_data["distance (pc)"] = tmp[0]
+                    else:
+                        planet_data["distance (pc)"] = ""
             planets.append(planet_data)
 
         # Convertir a JSON
