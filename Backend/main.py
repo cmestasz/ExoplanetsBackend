@@ -30,7 +30,7 @@ from supabase import create_client, Client, ClientOptions, AClient
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 from fastapi.security import OAuth2AuthorizationCodeBearer
-import os
+import os, json
 from dotenv import load_dotenv
 
 
