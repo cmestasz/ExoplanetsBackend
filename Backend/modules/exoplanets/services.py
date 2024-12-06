@@ -68,31 +68,37 @@ async def find_some_exoplanets(index: int, amount: int)->tuple[bool, str]:
             if len(cells) > 2:  # Asegúrate de que haya suficientes datos
                 planet_data["id"] = row.attrib.get("id")
                 #print("------------->", cells[2].text)
-                planet_data["planet name"] = re.findall(r">([^<]+)<",cells[2].text)[0]
-                planet_data["star name"] = cells[3].text
-                planet_data["number of stars"] = cells[5].text
-                planet_data["discovery year"] = cells[8].text
+                planet_data["name"] = re.findall(r">([^<]+)<",cells[2].text)[0]
+                planet_data["host_star"] = cells[3].text
+                # Estrellas en el sistema
+                planet_data["stars_amount"] = cells[5].text
+                # Año de descubrimientp
+                planet_data["discovery_year"] = cells[8].text
                 tmp =  re.findall(r">([^<]+)<", cells[15].text)
+                # Radio del planeta compoarado con la Tierra
                 if (len(tmp)>0):
-                    planet_data["planet radius (Earth)"] = tmp[0]
+                    planet_data["radius"] = tmp[0]
                 else: 
                     tmp = re.findall(r"\d+\.\d+(?=&)",cells[15].text)
                     if len(tmp)>0: 
-                        planet_data["planet radius (Earth)"] = tmp[0]
+                        planet_data["radius"] = tmp[0]
                     else:
-                        planet_data["planet radius (Earth)"] = ""
-                planet_data["ra (sexagesimal)"] = cells[33].text
-                planet_data["dec (sexagesimal)"] = cells[34].text
+                        planet_data["radius"] = ""
+                # Ascención recta: Posición en el cielo, en formato sexagesimal(grados, minutos, segundos)
+                planet_data["ra"] = cells[33].text
+                # Declinación, similar a la latitud,  en formato sexagesimal(grados, minutos, segundos)
+                planet_data["dec"] = cells[34].text
                 print("----------> ", cells[35].text)
                 tmp =  re.findall(r">([^<]+)<", cells[35].text)
+                # Distancia en parsecs
                 if (len(tmp) > 0):
-                    planet_data["distance (pc)"] = tmp[0]
+                    planet_data["dist"] = tmp[0]
                 else: 
                     tmp = re.findall(r"\d+\.\d+(?=&)",cells[35].text)
                     if len(tmp)>0: 
-                        planet_data["distance (pc)"] = tmp[0]
+                        planet_data["dist"] = tmp[0]
                     else:
-                        planet_data["distance (pc)"] = ""
+                        planet_data["dist"] = ""
             planets.append(planet_data)
 
         # Convertir a JSON
