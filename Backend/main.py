@@ -69,9 +69,9 @@ async def load_surroundings_by_id(
 @app.post("/get_exoplanets_by_name")
 async def get_exoplanets_by_name(
     request: ExoplanetsByNameRequest,
-) -> ExoplanetsResponse:
-    exoplanets = await find_exoplanets_by_name(request.name)
-    return ExoplanetsResponse(exoplanets=exoplanets)
+)-> JSONResponse :
+    exoplanets:str = await find_exoplanets_by_name(request.name)
+    return JSONResponse(content=exoplanets, status_code=200)
 
 
 @app.post("/get_some_exoplanets")

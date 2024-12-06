@@ -2,6 +2,7 @@ import astropy.table
 from fastapi import HTTPException
 from .models import Exoplanet, RequestExoplanets
 from pydantic import BaseModel
+from astropy.table import Table
 import pyvo as vo
 import pandas as pd
 import requests
@@ -88,7 +89,6 @@ async def find_some_exoplanets(index: int, amount: int)->tuple[bool, str]:
                 planet_data["ra"] = cells[33].text
                 # Declinación, similar a la latitud,  en formato sexagesimal(grados, minutos, segundos)
                 planet_data["dec"] = cells[34].text
-                print("----------> ", cells[35].text)
                 tmp =  re.findall(r">([^<]+)<", cells[35].text)
                 # Distancia en parsecs
                 if (len(tmp) > 0):
@@ -111,14 +111,34 @@ async def find_some_exoplanets(index: int, amount: int)->tuple[bool, str]:
 
 
 
-async def find_exoplanets_by_name(name: str) -> list[Exoplanet]:
+async def find_exoplanets_by_name(name: str) -> str:
     global client
     query = f"SELECT pl_name, ra, dec, parallax FROM ps WHERE pl_name LIKE '%{name}%' LIMIT 20"
+    query = f"""
+    SELECT DISTINCT
+        pl_name AS "name",
+        hostname AS "host_star",
+        sy_snum AS "stars_amount",
+        disc_year AS "discovery_year",
+        pl_rade AS "radius",
+        rastr AS "ra",
+        decstr AS "dec",
+        sy_dist AS "dist"
+    FROM
+        ps
+    WHERE pl_name = '{name}'
+    """
     result = client.search(query)
-
-    a_table: astropy.table = result.to_table()
-    exoplanets = result_to_exoplanet_list(a_table)
-    return exoplanets
+    print(result)
+    if len(result) == 0: return "";
+    planets = []
+    for row in result:
+        p = {}
+        for key in row:
+            val = str( row[key] )
+            p[key] = val if val != 'nan' else ""
+        planets.append(p)
+    return json.dumps(planets)
 
 
 '''
