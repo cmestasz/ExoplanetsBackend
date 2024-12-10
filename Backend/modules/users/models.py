@@ -29,10 +29,6 @@ class User(BaseModel):
     password: str
 
 
-class AllConstellationsRequest(BaseModel):
-    user_id: int
-
-
 class ConstellationsResponse(BaseModel):
     constellations: list[Constellation]
 

@@ -65,9 +65,10 @@ async def createConstellation(user_id: int, constellation: Constellation) -> str
     return "Constellation created successfully"
 
 
-async def getAllConstellationsByUser(user_id: int) -> list[Constellation]:
+async def getAllConstellationsByUser() -> list[Constellation]:
     try:
-        constellations_response = supabase.table("constellations").select("*").eq("user_id", user_id).execute()
+        user_response = supabase.auth.get_user()
+        constellations_response = supabase.table("constellations").select("*").eq("user_id", user_response.user.id).execute()
 
         if constellations_response.error:
             raise HTTPException(status_code=500, detail="Error fetching constellations")

@@ -1,6 +1,7 @@
 import astropy.table
 from fastapi import HTTPException
 from .models import Exoplanet, RequestExoplanets
+from .utils import parse_dec_to_degrees, parse_ra_to_degrees
 from pydantic import BaseModel
 from astropy.table import Table
 import pyvo as vo
@@ -86,9 +87,9 @@ async def find_some_exoplanets(index: int, amount: int)->tuple[bool, str]:
                     else:
                         planet_data["radius"] = ""
                 # Ascención recta: Posición en el cielo, en formato sexagesimal(grados, minutos, segundos)
-                planet_data["ra"] = cells[33].text
+                planet_data["ra"] = parse_ra_to_degrees(cells[33].text)
                 # Declinación, similar a la latitud,  en formato sexagesimal(grados, minutos, segundos)
-                planet_data["dec"] = cells[34].text
+                planet_data["dec"] = parse_dec_to_degrees(cells[34].text)
                 tmp =  re.findall(r">([^<]+)<", cells[35].text)
                 # Distancia en parsecs
                 if (len(tmp) > 0):
@@ -132,7 +133,7 @@ async def find_exoplanets_by_name(name: str) -> str:
     result = client.search(query)
     print(result)
     planet_set = set()
-    if len(result) == 0: return "";
+    if len(result) == 0: return ""
     planets = []
     for row in result:
         p = {}

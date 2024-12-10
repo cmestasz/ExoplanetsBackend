@@ -8,13 +8,10 @@ from .modules.stars.models import (
     SurroundingsIdResponse,
 )
 from .modules.exoplanets.services import find_exoplanets_by_name, find_some_exoplanets
-from .modules.exoplanets.models import ExoplanetsByNameRequest, ExoplanetsResponse, RequestExoplanets
+from .modules.exoplanets.models import ExoplanetsByNameRequest, RequestExoplanets
 from .modules.input.models import InputResponse
 from .modules.input.services import process_input
 from .modules.users.models import (
-    AuthRequest,
-    AuthResponse,
-    AllConstellationsRequest,
     ConstellationsResponse,
     ActiveConstellationsRequest,
     ConstellationsResponse,
@@ -96,10 +93,8 @@ async def create_constellation(request: CreateConstellationRequest) -> CreateCon
 
 
 @app.post("/list_all_constellations")
-async def list_all_constellations(
-    request: AllConstellationsRequest,
-) -> ConstellationsResponse:
-    constellations = await getAllConstellationsByUser(request.user_id)
+async def list_all_constellations(request: Request) -> ConstellationsResponse:
+    constellations = await getAllConstellationsByUser()
     return ConstellationsResponse(constellations=constellations)
 
 
