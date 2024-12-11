@@ -40,8 +40,8 @@ async def find_some_exoplanets(index: int, amount: int)->tuple[bool, str]:
         sy_snum AS "stars_amount",
         disc_year AS "discovery_year",
         pl_rade AS "radius",
-        rastr AS "ra",
-        decstr AS "dec",
+        ra AS "ra",
+        dec AS "dec",
         sy_dist AS "dist",
         gaia_id AS "id"
     FROM
@@ -52,8 +52,8 @@ async def find_some_exoplanets(index: int, amount: int)->tuple[bool, str]:
         sy_snum IS NOT NULL AND 
         disc_year IS NOT NULL AND 
         pl_rade IS NOT NULL AND 
-        rastr IS NOT NULL AND 
-        decstr IS NOT NULL AND 
+        ra IS NOT NULL AND 
+        dec IS NOT NULL AND 
         sy_dist IS NOT NULL AND 
         gaia_id IS NOT NULL
     ORDER BY pl_name ASC
@@ -85,8 +85,8 @@ async def find_exoplanets_by_name(name: str) -> str:
         sy_snum AS "stars_amount",
         disc_year AS "discovery_year",
         pl_rade AS "radius",
-        rastr AS "ra",
-        decstr AS "dec",
+        ra AS "ra",
+        dec AS "dec",
         sy_dist AS "dist",
         gaia_id AS "i"
     FROM
@@ -97,8 +97,8 @@ async def find_exoplanets_by_name(name: str) -> str:
         sy_snum IS NOT NULL AND 
         disc_year IS NOT NULL AND 
         pl_rade IS NOT NULL AND 
-        rastr IS NOT NULL AND 
-        decstr IS NOT NULL AND 
+        ra IS NOT NULL AND 
+        dec IS NOT NULL AND 
         sy_dist IS NOT NULL AND 
         gaia_id IS NOT NULL
     """
