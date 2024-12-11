@@ -43,7 +43,7 @@ async def find_some_exoplanets(index: int, amount: int)->tuple[bool, str]:
         rastr AS "ra",
         decstr AS "dec",
         sy_dist AS "dist",
-        gaia_id
+        gaia_id AS "id"
     FROM
         pscomppars
     WHERE 
@@ -88,7 +88,7 @@ async def find_exoplanets_by_name(name: str) -> str:
         rastr AS "ra",
         decstr AS "dec",
         sy_dist AS "dist",
-        gaia_id
+        gaia_id AS "i"
     FROM
         pscomppars
     WHERE 

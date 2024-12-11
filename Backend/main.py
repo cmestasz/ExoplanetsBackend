@@ -103,7 +103,7 @@ async def list_active_constellations(
     request: ActiveConstellationsRequest,
 ) -> ConstellationsResponse:
     constellations = await getActiveConstellationsByUser(
-        request.user_id, request.ra, request.dec, request.dist
+        request.ra, request.dec, request.dist, request.jwt
     )
     return ConstellationsResponse(constellations=constellations)
 
